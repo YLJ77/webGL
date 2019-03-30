@@ -14,9 +14,11 @@
                 canvas: null,
                 ctx: null,
                 VSHADER_SOURCE:
+                    'attribute vec4 a_Position;\n' +
+                    'attribute float a_PointSize;\n' +
                     'void main() {\n' +
-                    '  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);\n' + // Set the vertex coordinates of the point
-                    '  gl_PointSize = 10.0;\n' +                    // Set the point size
+                    '  gl_Position = a_Position;\n' + // Set the vertex coordinates of the point
+                    '  gl_PointSize = a_PointSize;\n' +                    // Set the point size
                     '}\n',
 
                 // Fragment shader program
@@ -36,6 +38,12 @@
             draw() {
                 let { ctx, VSHADER_SOURCE, FSHADER_SOURCE } = this;
                 let program = createProgram({ ctx, vSource: VSHADER_SOURCE, fSource: FSHADER_SOURCE });
+                // Get the storage location of attribute variable
+                let a_Position = ctx.getAttribLocation(program, 'a_Position');
+                let a_PointSize = ctx.getAttribLocation(program, 'a_PointSize');
+                // Pass vertex position to attribute variable
+                ctx.vertexAttrib3f(a_Position, 0.0, 0.0, 0.0);
+                ctx.vertexAttrib1f(a_PointSize, 20.0);
 
                 // Specify the color for clearing <canvas>
                 ctx.clearColor(0.0, 0.0, 0.0, 1.0);
