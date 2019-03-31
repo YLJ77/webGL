@@ -7,6 +7,7 @@
 
 <script>
     import { createProgram, windowToCanvas, initVertexBuffers } from "../util/appFunc";
+    import { Matrix4 } from "../util/Matrix4";
 
     export default {
         data() {
@@ -16,11 +17,31 @@
                 g_points: [],
                 program: null,
                 VSHADER_SOURCE:
+                    //  x = r cos α
+                    //  y = r sin α
+
+                    //  x' = r cos (α + β)
+                    //  y' = r sin (α + β )
+
+                    //  x' = r (cos α cos β – sin α sin β)
+                    //  y' = r (sin α cos β + cos α sin β)
+
+                    //  x' = x cos β – y sin β
+                    //  y' = x sin β + y cos β
+                    //  z' = z
+                    // 'uniform vec2 u_CosBSinB;\n' +
+                    'uniform mat4 u_xformMatrix;\n' +
                     'attribute vec4 a_Position;\n' +
                     'attribute float a_PointSize;\n' +
+                    // 'uniform vec4 u_Translation;\n' +
                     'void main() {\n' +
-                    '  gl_Position = a_Position;\n' + // Set the vertex coordinates of the point
-                    '  gl_PointSize = a_PointSize;\n' +                    // Set the point size
+                    'gl_Position = u_xformMatrix * a_Position;\n' +
+                    // '  gl_Position = a_Position + u_Translation;\n' + // Set the vertex coordinates of the point
+/*                    'gl_Position.x = a_Position.x * u_CosBSinB.x - a_Position.y * u_CosBSinB.y;\n' +
+                    'gl_Position.y = a_Position.x * u_CosBSinB.y + a_Position.y * u_CosBSinB.x;\n' +
+                    'gl_Position.z = a_Position.z;\n' +
+                    'gl_Position.w = 1.0;\n' +*/
+                    'gl_PointSize = a_PointSize;\n' +                    // Set the point size
                     '}\n',
 
                 // Fragment shader program
@@ -35,9 +56,46 @@
         methods: {
             drawTriangle() {
                 let { ctx, program } = this;
+                // triangle
                 let vertices = new Float32Array([ 0.0, 0.5,   -0.5, -0.5,   0.5, -0.5 ]);
+                // rect
+                // let vertices = new Float32Array([-0.5,0.5,-0.5,-0.5,0.5,0.5,0.5,-0.5]);
+
                 // Write the positions of vertices to a vertex shader
                 let n = initVertexBuffers({ ctx, program, vertices, attrVar: 'a_Position' });
+
+                // translation
+/*                let u_Translation = ctx.getUniformLocation(program, 'u_Translation');
+                ctx.uniform4f(u_Translation, 0.5, 0.5, 0.0, 0.0);*/
+
+/*                let ANGLE = 0;
+                let radian = ANGLE * Math.PI / 180;
+                let cosB = Math.cos(radian);
+                let sinB = Math.sin(radian);
+
+                // rotate
+/!*                let u_CosBSinB = ctx.getUniformLocation(program, 'u_CosBSinB');
+                ctx.uniform2f(u_CosBSinB, cosB, sinB);*!/
+
+                // matrix rotate
+                let xformMatrix = new Float32Array([
+                    0.5 * cosB, sinB, 0.0, 0.0,
+                    -sinB, 0.5 * cosB, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.5, 0.5, 0.0, 1.0,
+                ]);
+                let u_xformMatrix = ctx.getUniformLocation(program, 'u_xformMatrix');
+                ctx.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);*/
+
+                let xformMatrix = new Matrix4();
+                let ANGLE = -45;
+                //xformMatrix.setRotate({ angle: ANGLE, x: 0, y: 0, z: 1 })
+                // xformMatrix.setTranslate({ x: 0.5, y: 0.5, z: 0 });
+                // xformMatrix.scale({ x: 0.5, y: 0.5, z: 1 });
+                // xformMatrix.translate({ x: 0.5, y: 0.5, z: 0 });
+                xformMatrix.rotate({ angle: ANGLE, x: 0, y: 0, z: 1 });
+                let u_xformMatrix = ctx.getUniformLocation(program, 'u_xformMatrix');
+                ctx.uniformMatrix4fv(u_xformMatrix, false, xformMatrix.elements);
 
                 // Specify the color for clearing <canvas>
                 ctx.clearColor(0, 0, 0, 1);
@@ -46,7 +104,7 @@
                 ctx.clear(ctx.COLOR_BUFFER_BIT);
 
                 // Draw three points
-                ctx.drawArrays(ctx.LINE_LOOP, 0, n);
+                ctx.drawArrays(ctx.TRIANGLE_STRIP, 0, n);
                 ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
             },
             init() {
@@ -57,8 +115,8 @@
                 this.ctx = this.canvas.getContext('webgl');
                 let { ctx } = this;
                 this.program = createProgram({ ctx, vSource: VSHADER_SOURCE, fSource: FSHADER_SOURCE });
-/*                let a_PointSize = ctx.getAttribLocation(this.program, 'a_PointSize');
-                ctx.vertexAttrib1f(a_PointSize, 10.0);*/
+                let a_PointSize = ctx.getAttribLocation(this.program, 'a_PointSize');
+                ctx.vertexAttrib1f(a_PointSize, 10.0);
                 ctx.clearColor(0.0, 0.0, 0.0, 1.0);
                 ctx.clear(ctx.COLOR_BUFFER_BIT);
             },
