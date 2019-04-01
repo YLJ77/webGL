@@ -102,7 +102,7 @@ export class Matrix4 {
     }
     rotate ({ angle, x, y, z }) {
         return this.concat(new Matrix4().setRotate({ angle, x, y, z }));
-    };
+    }
     /**
      * Multiply the matrix from the right.
      * @param other The multiply matrix
@@ -133,7 +133,7 @@ export class Matrix4 {
         }
 
         return this;
-    };
+    }
     /**
      * Set the matrix for translation.
      * @param x The X value of a translation.
@@ -159,7 +159,7 @@ export class Matrix4 {
             e[12] + e[0] * x + e[4] * y + e[8]  * z, e[13] + e[1] * x + e[5] * y + e[9]  * z, e[14] + e[2] * x + e[6] * y + e[10] * z, e[15] + e[3] * x + e[7] * y + e[11] * z
         ]);
         return this;
-    };
+    }
     /**
      * Set the matrix for scaling.
      * @param x The scale factor along the X axis
@@ -185,5 +185,5 @@ export class Matrix4 {
             e[12],   e[13],   e[14],   e[15],
         ]);
         return this;
-    };
+    }
 }

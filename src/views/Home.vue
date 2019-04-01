@@ -12,6 +12,7 @@
     export default {
         data() {
             return {
+                g_last: null,
                 canvas: null,
                 ctx: null,
                 g_points: [],
@@ -30,17 +31,11 @@
                     //  y' = x sin β + y cos β
                     //  z' = z
                     // 'uniform vec2 u_CosBSinB;\n' +
-                    'uniform mat4 u_xformMatrix;\n' +
+                    'uniform mat4 u_ModelMatrix;\n' +
                     'attribute vec4 a_Position;\n' +
                     'attribute float a_PointSize;\n' +
-                    // 'uniform vec4 u_Translation;\n' +
                     'void main() {\n' +
-                    'gl_Position = u_xformMatrix * a_Position;\n' +
-                    // '  gl_Position = a_Position + u_Translation;\n' + // Set the vertex coordinates of the point
-/*                    'gl_Position.x = a_Position.x * u_CosBSinB.x - a_Position.y * u_CosBSinB.y;\n' +
-                    'gl_Position.y = a_Position.x * u_CosBSinB.y + a_Position.y * u_CosBSinB.x;\n' +
-                    'gl_Position.z = a_Position.z;\n' +
-                    'gl_Position.w = 1.0;\n' +*/
+                    'gl_Position = u_ModelMatrix * a_Position;\n' +
                     'gl_PointSize = a_PointSize;\n' +                    // Set the point size
                     '}\n',
 
@@ -58,54 +53,38 @@
                 let { ctx, program } = this;
                 // triangle
                 let vertices = new Float32Array([ 0.0, 0.5,   -0.5, -0.5,   0.5, -0.5 ]);
-                // rect
-                // let vertices = new Float32Array([-0.5,0.5,-0.5,-0.5,0.5,0.5,0.5,-0.5]);
-
                 // Write the positions of vertices to a vertex shader
                 let n = initVertexBuffers({ ctx, program, vertices, attrVar: 'a_Position' });
+                let modelMatrix = new Matrix4();
+                let currentAngle = 0.0;
+                let u_ModelMatrix = ctx.getUniformLocation(program, 'u_ModelMatrix');
+                modelMatrix.setRotate({ angle: 10, x: 0, y: 0, z: 1 });
+                ctx.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+                this.g_last = Date.now();
+                let animateRotate = () => {
+                    this.draw(n, currentAngle += 1, modelMatrix, u_ModelMatrix);
+                    requestAnimationFrame(animateRotate);// Request that the browser calls animateRotate
+                };
+                animateRotate();
+/*                ctx.clear(ctx.COLOR_BUFFER_BIT);
+                ctx.drawArrays(ctx.TRIANGLES, 0, n);*/
 
-                // translation
-/*                let u_Translation = ctx.getUniformLocation(program, 'u_Translation');
-                ctx.uniform4f(u_Translation, 0.5, 0.5, 0.0, 0.0);*/
+                // ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
+            },
+            draw(n, currentAngle, modelMatrix, u_ModelMatrix) {
+                let { ctx } = this;
+                // Set up rotation matrix
+                modelMatrix.setRotate({ angle: currentAngle, x: 0, y: 0, z: 1 });
+                modelMatrix.translate({ x: 0.85, y: 0, z: 0 });
 
-/*                let ANGLE = 0;
-                let radian = ANGLE * Math.PI / 180;
-                let cosB = Math.cos(radian);
-                let sinB = Math.sin(radian);
-
-                // rotate
-/!*                let u_CosBSinB = ctx.getUniformLocation(program, 'u_CosBSinB');
-                ctx.uniform2f(u_CosBSinB, cosB, sinB);*!/
-
-                // matrix rotate
-                let xformMatrix = new Float32Array([
-                    0.5 * cosB, sinB, 0.0, 0.0,
-                    -sinB, 0.5 * cosB, 0.0, 0.0,
-                    0.0, 0.0, 1.0, 0.0,
-                    0.5, 0.5, 0.0, 1.0,
-                ]);
-                let u_xformMatrix = ctx.getUniformLocation(program, 'u_xformMatrix');
-                ctx.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);*/
-
-                let xformMatrix = new Matrix4();
-                let ANGLE = -45;
-                //xformMatrix.setRotate({ angle: ANGLE, x: 0, y: 0, z: 1 })
-                // xformMatrix.setTranslate({ x: 0.5, y: 0.5, z: 0 });
-                // xformMatrix.scale({ x: 0.5, y: 0.5, z: 1 });
-                // xformMatrix.translate({ x: 0.5, y: 0.5, z: 0 });
-                xformMatrix.rotate({ angle: ANGLE, x: 0, y: 0, z: 1 });
-                let u_xformMatrix = ctx.getUniformLocation(program, 'u_xformMatrix');
-                ctx.uniformMatrix4fv(u_xformMatrix, false, xformMatrix.elements);
-
-                // Specify the color for clearing <canvas>
-                ctx.clearColor(0, 0, 0, 1);
+                // Pass the rotation matrix to the vertex shader
+                ctx.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
                 // Clear <canvas>
                 ctx.clear(ctx.COLOR_BUFFER_BIT);
 
-                // Draw three points
-                ctx.drawArrays(ctx.TRIANGLE_STRIP, 0, n);
-                ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
+                // Draw a triangle
+                ctx.drawArrays(ctx.TRIANGLES, 0, n);
             },
             init() {
                 let { VSHADER_SOURCE, FSHADER_SOURCE } = this;
@@ -116,7 +95,9 @@
                 let { ctx } = this;
                 this.program = createProgram({ ctx, vSource: VSHADER_SOURCE, fSource: FSHADER_SOURCE });
                 let a_PointSize = ctx.getAttribLocation(this.program, 'a_PointSize');
+                let u_FragColor = ctx.getUniformLocation(this.program, 'u_FragColor');
                 ctx.vertexAttrib1f(a_PointSize, 10.0);
+                ctx.uniform4f(u_FragColor, 0.0, 1.0, 0.0, 1.0);
                 ctx.clearColor(0.0, 0.0, 0.0, 1.0);
                 ctx.clear(ctx.COLOR_BUFFER_BIT);
             },
