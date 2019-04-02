@@ -30,18 +30,18 @@ export function windowToCanvas({x, y, canvas }) {
     return { x, y }
 }
 
-export function initVertexBuffers({ ctx, vertices, attrVar, program }) {
+export function initVertexBuffers({ ctx, vertices, program, verticesInfo }) {
     // Bind the buffer object to target
     ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
     // Write date into the buffer object
     ctx.bufferData(ctx.ARRAY_BUFFER, vertices, ctx.STATIC_DRAW);
 
-    let a_Position = ctx.getAttribLocation(program, attrVar);
-    // Assign the buffer object to a_Position variable
-    ctx.vertexAttribPointer(a_Position, 2, ctx.FLOAT, false, 0, 0);
-
-    // Enable the assignment to a_Position variable
-    ctx.enableVertexAttribArray(a_Position);
-
-    return vertices.length / 2;
+    verticesInfo.forEach(info => {
+        let { attrVar, size, stride, offset } = info;
+        let attrLoc = ctx.getAttribLocation(program, attrVar);
+        // Assign the buffer object to attrLoc variable
+        ctx.vertexAttribPointer(attrLoc, size, ctx.FLOAT, false, stride, offset);
+        // Enable the assignment to attrLoc variable
+        ctx.enableVertexAttribArray(attrLoc);
+    });
 }
