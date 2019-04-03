@@ -6,8 +6,10 @@
 
 
 <script>
-    import { createProgram, windowToCanvas, initVertexBuffers } from "../util/appFunc";
+    import { createProgram, windowToCanvas, initVertexBuffers, initTextures } from "../util/appFunc";
     import { Matrix4 } from "../util/Matrix4";
+    import sky from '../assets/sky.jpg'
+    import circle from '../assets/circle.gif'
 
     export default {
         data() {
@@ -23,10 +25,13 @@
                     'attribute float a_PointSize;\n' +
                     'attribute vec4 a_Color;\n' +
                     'varying vec4 v_Color;\n' + // varying variable
+                    'attribute vec2 a_TexCoord;\n' +
+                    'varying vec2 v_TexCoord;\n' +
                     'void main() {\n' +
                         'gl_Position = u_ModelMatrix * a_Position;\n' +
                         'gl_PointSize = a_PointSize;\n' +                    // Set the point size
                         'v_Color = a_Color;\n' +        // Pass the data to the fragment shader
+                        'v_TexCoord = a_TexCoord;\n' +
                     '}\n',
 
                 // Fragment shader program
@@ -36,43 +41,59 @@
                     'uniform float u_Width;\n' +
                     'uniform float u_Height;\n' +
                     'varying vec4 v_Color;\n' +
+                    'uniform sampler2D u_Sampler0;\n' +
+                    'uniform sampler2D u_Sampler1;\n' +
+                    'varying vec2 v_TexCoord;\n' +
                     'void main() {\n' +
                     // '  gl_FragColor = u_FragColor;\n' + // Set the point color
                     // '  gl_FragColor = v_Color;\n' + // Receive the data from the vertex shader
-                    ' gl_FragColor = vec4(gl_FragCoord.x/u_Width, 0.0, gl_FragCoord.y/u_Height, 1.0);\n' +
+                    // ' gl_FragColor = vec4(gl_FragCoord.x/u_Width, 0.0, gl_FragCoord.y/u_Height, 1.0);\n' +
+                    //     'gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
+                    ' vec4 color0 = texture2D(u_Sampler0, v_TexCoord);\n' +
+                    ' vec4 color1 = texture2D(u_Sampler1, v_TexCoord);\n' +
+                    ' gl_FragColor = color0 * color1;\n' +
                     '}\n'
             }
         },
         methods: {
             drawPoints() {
                 let { ctx, program } = this;
-                let verticesSizes = new Float32Array([
+/*                let verticesSizes = new Float32Array([
                     0.0, 0.5, 10.0, 1.0, 0.0, 0.0,
                     -0.5, -0.5, 20.0, 0.0, 1.0, 0.0,
                     0.5, -0.5, 30.0, 0.0, 0.0, 1.0,
+                ]);*/
+                let verticesTexCoords = new Float32Array([
+                    -0.5, 0.5, 0.0, 1.0,
+                    -0.5, -0.5, 0.0, 0.0,
+                    0.5, 0.5, 1.0, 1.0,
+                    0.5, -0.5, 1.0, 0.0
                 ]);
-                let FSIZE = verticesSizes.BYTES_PER_ELEMENT;
-                let u_Width = ctx.getUniformLocation(program, 'u_Width');
-                let u_Height = ctx.getUniformLocation(program, 'u_Height');
-                ctx.uniform1f(u_Width, ctx.drawingBufferWidth);
-                ctx.uniform1f(u_Height, ctx.drawingBufferHeight);
+                let FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
                 initVertexBuffers({
                     ctx,
                     program,
-                    vertices: verticesSizes,
+                    // vertices: verticesSizes,
+                    vertices: verticesTexCoords,
                     verticesInfo: [
                         {
                             attrVar: 'a_Position',
                             size: 2,
-                            stride: FSIZE * 6,
+                            stride: FSIZE * 4,
                             offset: 0
                         },
                         {
+                            attrVar: 'a_TexCoord',
+                            size: 2,
+                            stride: FSIZE * 4,
+                            offset: FSIZE * 2
+                        }
+/*                        {
                             attrVar: 'a_PointSize',
                             size: 1,
                             stride: FSIZE * 6,
                             offset: FSIZE * 2
-                        },
+                        },*/
 /*                        {
                             attrVar: 'a_Color',
                             size: 3,
@@ -81,9 +102,10 @@
                         }*/
                     ],
                 });
-                ctx.clear(ctx.COLOR_BUFFER_BIT);
-                ctx.drawArrays(ctx.TRIANGLES, 0, 3);
-                ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
+                // Get the storage location of uniformVar
+                initTextures({ ctx, program, uniformVar: 'u_Sampler0', imgSrc: sky, count: 4, canDraw: false, textUnit: 0 });
+                initTextures({ ctx, program, uniformVar: 'u_Sampler1', imgSrc: circle, count: 4, canDraw: true, textUnit: 1 });
+                // ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
             },
             drawTriangle() {
                 let { ctx, program } = this;
