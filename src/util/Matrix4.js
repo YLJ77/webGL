@@ -109,7 +109,7 @@ export class Matrix4 {
      * @return this
      */
     concat (other) {
-        var i, e, a, b, ai0, ai1, ai2, ai3;
+        let i, e, a, b, ai0, ai1, ai2, ai3;
 
         // Calculate e = a * b
         e = this.elements;
@@ -133,6 +133,9 @@ export class Matrix4 {
         }
 
         return this;
+    }
+    multiply(other) {
+        this.concat(other);
     }
     /**
      * Set the matrix for translation.
@@ -184,6 +187,123 @@ export class Matrix4 {
             e[8]*z, e[9]*z, e[10]*z, e[11]*z,
             e[12],   e[13],   e[14],   e[15],
         ]);
+        return this;
+    }
+    /**
+     * Set the viewing matrix.
+     * @param eyeX, eyeY, eyeZ The position of the eye point.
+     * @param lookAtX, lookAtY, lookAtZ The position of the reference point.
+     * @param upX, upY, upZ The direction of the up vector.
+     * @return this
+     */
+    setLookAt (eyeX, eyeY, eyeZ, lookAtX, lookAtY, lookAtZ, upX, upY, upZ) {
+        let e, fx, fy, fz, rlf, sx, sy, sz, rls, ux, uy, uz;
+
+        fx = lookAtX - eyeX;
+        fy = lookAtY - eyeY;
+        fz = lookAtZ - eyeZ;
+
+        // Normalize f.
+        rlf = 1 / Math.sqrt(fx*fx + fy*fy + fz*fz);
+        fx *= rlf;
+        fy *= rlf;
+        fz *= rlf;
+
+        // Calculate cross product of f and up.
+        sx = fy * upZ - fz * upY;
+        sy = fz * upX - fx * upZ;
+        sz = fx * upY - fy * upX;
+
+        // Normalize s.
+        rls = 1 / Math.sqrt(sx*sx + sy*sy + sz*sz);
+        sx *= rls;
+        sy *= rls;
+        sz *= rls;
+
+        // Calculate cross product of s and f.
+        ux = sy * fz - sz * fy;
+        uy = sz * fx - sx * fz;
+        uz = sx * fy - sy * fx;
+
+        // Set to this.
+        e = this.elements;
+        e[0] = sx;
+        e[1] = ux;
+        e[2] = -fx;
+        e[3] = 0;
+
+        e[4] = sy;
+        e[5] = uy;
+        e[6] = -fy;
+        e[7] = 0;
+
+        e[8] = sz;
+        e[9] = uz;
+        e[10] = -fz;
+        e[11] = 0;
+
+        e[12] = 0;
+        e[13] = 0;
+        e[14] = 0;
+        e[15] = 1;
+
+        // Translate.
+        return this.translate({ x: -eyeX, y: -eyeY, z: -eyeZ });
+    }
+
+    /**
+     * Multiply the viewing matrix from the right.
+     * @param eyeX, eyeY, eyeZ The position of the eye point.
+     * @param lookAtX, lookAtY, lookAtZ The position of the reference point.
+     * @param upX, upY, upZ The direction of the up vector.
+     * @return this
+     */
+    lookAt (eyeX, eyeY, eyeZ, lookAtX, lookAtY, lookAtZ, upX, upY, upZ) {
+        return this.concat(new Matrix4().setLookAt(eyeX, eyeY, eyeZ, lookAtX, lookAtY, lookAtZ, upX, upY, upZ));
+    }
+    /**
+     * Set the orthographic projection matrix.
+     * @param left The coordinate of the left of clipping plane.
+     * @param right The coordinate of the right of clipping plane.
+     * @param bottom The coordinate of the bottom of clipping plane.
+     * @param top The coordinate of the top top clipping plane.
+     * @param near The distances to the nearer depth clipping plane. This value is minus if the plane is to be behind the viewer.
+     * @param far The distances to the farther depth clipping plane. This value is minus if the plane is to be behind the viewer.
+     * @return this
+     */
+    setOrtho (left, right, bottom, top, near, far) {
+        var e, rw, rh, rd;
+
+        if (left === right || bottom === top || near === far) {
+            throw 'null frustum';
+        }
+
+        rw = 1 / (right - left);
+        rh = 1 / (top - bottom);
+        rd = 1 / (far - near);
+
+        e = this.elements;
+
+        e[0]  = 2 * rw;
+        e[1]  = 0;
+        e[2]  = 0;
+        e[3]  = 0;
+
+        e[4]  = 0;
+        e[5]  = 2 * rh;
+        e[6]  = 0;
+        e[7]  = 0;
+
+        e[8]  = 0;
+        e[9]  = 0;
+        e[10] = -2 * rd;
+        e[11] = 0;
+
+        e[12] = -(right + left) * rw;
+        e[13] = -(top + bottom) * rh;
+        e[14] = -(far + near) * rd;
+        e[15] = 1;
+
         return this;
     }
 }
