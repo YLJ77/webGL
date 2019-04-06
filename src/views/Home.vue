@@ -14,10 +14,22 @@
     export default {
         data() {
             return {
-                eye: {
-                    x: 0.2,
-                    y: 0.25,
-                    z: 0.25
+                lookAt: {
+                    eye: {
+                        x: 0,
+                        y: 0,
+                        z: 5
+                    },
+                    look: {
+                        x: 0,
+                        y: 0,
+                        z: -100
+                    },
+                    up: {
+                        x: 0,
+                        y: 1,
+                        z: 0
+                    }
                 },
                 ortho: {
                     left: -1,
@@ -25,14 +37,15 @@
                     bottom: -1,
                     top: 1,
                     near: 0,
-                    far: 0.5
+                    far: 2.0
                 },
                 canvas: null,
                 ctx: null,
                 g_points: [],
                 program: null,
+                shape: null,
                 VSHADER_SOURCE:
-                    'uniform mat4 u_ModelViewMatrix;\n' +
+                    'uniform mat4 u_MvpMatrix;\n' +
                     'attribute vec4 a_Position;\n' +
                     'attribute float a_PointSize;\n' +
                     'attribute vec4 a_Color;\n' +
@@ -40,7 +53,7 @@
                     'attribute vec2 a_TexCoord;\n' +
                     'varying vec2 v_TexCoord;\n' +
                     'void main() {\n' +
-                        'gl_Position = u_ModelViewMatrix * a_Position;\n' +
+                        'gl_Position = u_MvpMatrix * a_Position;\n' +
                         'gl_PointSize = a_PointSize;\n' +                    // Set the point size
                         'v_Color = a_Color;\n' +        // Pass the data to the fragment shader
                         // 'v_TexCoord = a_TexCoord;\n' +
@@ -69,7 +82,7 @@
         },
         methods: {
             setEyePoint(e) {
-                let { eye, ortho } = this;
+                let { lookAt: { eye }, ortho, shape } = this;
                 let { which } = e;
                 let codeMapAction = {
                     39: {               // right
@@ -124,33 +137,170 @@
                     },
                 };
                 if (!codeMapAction[which]) return;
+                let step = 0.1;
                 let { action, field, variable } = codeMapAction[which];
                 if (action === 'add') {
-                    if (variable[field] < 1) variable[field] += 0.01;
+                    /*if (variable[field] < 1) */variable[field] += step;
                 } else if (action === 'reduce') {
-                    if (variable[field] > 0.01) variable[field] -= 0.01;
+                    /*if (variable[field] > 0.01) */variable[field] -= step;
                 }
-                this.draw3DTriangle();
+                this[`draw${ shape }`]();
+            },
+            drawCube() {
+                 let {
+                    ctx,
+                    program, canvas } = this;
+                let u_MvpMatrix = ctx.getUniformLocation(this.program, 'u_MvpMatrix');
+                let viewMatrix = new Matrix4();
+                let modelMatrix = new Matrix4(); // Model matrix
+                let projMatrix = new Matrix4(); // Projection matrix
+                let mvpMatrix = new Matrix4();
+                const FSIZE = Float32Array.BYTES_PER_ELEMENT;
+                // Create a cube
+                //    v6----- v5
+                //   /|      /|
+                //  v1------v0|
+                //  | |     | |
+                //  | |v7---|-|v4
+                //  |/      |/
+                //  v2------v3
+
+                var vertices = [   // Vertex coordinates
+                    1.0, 1.0, 1.0,  -1.0, 1.0, 1.0,  -1.0,-1.0, 1.0,   1.0,-1.0, 1.0,  // v0-v1-v2-v3 front
+                    1.0, 1.0, 1.0,   1.0,-1.0, 1.0,   1.0,-1.0,-1.0,   1.0, 1.0,-1.0,  // v0-v3-v4-v5 right
+                    1.0, 1.0, 1.0,   1.0, 1.0,-1.0,  -1.0, 1.0,-1.0,  -1.0, 1.0, 1.0,  // v0-v5-v6-v1 up
+                    -1.0, 1.0, 1.0,  -1.0, 1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0,-1.0, 1.0,  // v1-v6-v7-v2 left
+                    -1.0,-1.0,-1.0,   1.0,-1.0,-1.0,   1.0,-1.0, 1.0,  -1.0,-1.0, 1.0,  // v7-v4-v3-v2 down
+                    1.0,-1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0, 1.0,-1.0,   1.0, 1.0,-1.0   // v4-v7-v6-v5 back
+                ];
+
+                var colors = [     // Colors
+                    0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  // v0-v1-v2-v3 front(blue)
+                    0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  // v0-v3-v4-v5 right(green)
+                    1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  // v0-v5-v6-v1 up(red)
+                    1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  1.0, 1.0, 0.4,  // v1-v6-v7-v2 left
+                    1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  1.0, 1.0, 1.0,  // v7-v4-v3-v2 down
+                    0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0   // v4-v7-v6-v5 back
+                ];
+
+                let verCol = vertices.reduce((acc, cur, index, arr) => {
+                    if (index === 0 || index % 3 === 0) {
+                        acc.push(cur, arr[index + 1], arr[index + 2], colors[index], colors[index + 1], colors[index + 2]);
+                    }
+                    return acc;
+                }, []);
+
+                let verticesColors = new Float32Array(verCol);
+
+                var indices = new Uint8Array([       // Indices of the vertices
+                    0, 1, 2,   0, 2, 3,    // front
+                    4, 5, 6,   4, 6, 7,    // right
+                    8, 9,10,   8,10,11,    // up
+                    12,13,14,  12,14,15,    // left
+                    16,17,18,  16,18,19,    // down
+                    20,21,22,  20,22,23     // back
+                ]);
+                if (!this.drawCube.firstCall) {
+                    this.lookAt = {
+                        eye: {
+                            x: 3,
+                            y: 3,
+                            z: 7
+                        },
+                        look: {
+                            x: 0,
+                            y: 0,
+                            z: 0
+                        },
+                        up: {
+                            x: 0,
+                            y: 1,
+                            z: 0
+                        }
+                    };
+                    this.shape = 'Cube';
+                    this.drawCube.firstCall = true;
+                }
+                let { lookAt: { eye, look, up } } = this;
+                initVertexBuffers({
+                    ctx,
+                    program,
+                    vertices: verticesColors,
+                    indices,
+                    verticesInfo: [
+                        {
+                            attrVar: 'a_Position',
+                            size: 3,
+                            stride: FSIZE * 6,
+                            offset: 0
+                        },
+                        {
+                            attrVar: 'a_Color',
+                            size: 3,
+                            stride: FSIZE * 6,
+                            offset: FSIZE * 3
+                        }
+                    ],
+                });
+                // viewMatrix.setOrtho(left, right, bottom, top, near, far);
+                modelMatrix.setTranslate({ x: 0.75, y: 0, z: 0 }); // Translate 0.75 units
+                viewMatrix.setLookAt(
+                    eye.x, eye.y, eye.z,
+                    look.x, look.y, look.z,
+                    up.x, up.y, up.z
+                );
+                projMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
+                mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
+                ctx.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+                ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+                ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_BYTE, 0);
             },
             draw3DTriangle() {
-                let { ctx, program, eye: { x, y, z }, ortho: { left, right, bottom, top, near, far } } = this;
-                let u_ModelViewMatrix = ctx.getUniformLocation(this.program, 'u_ModelViewMatrix');
+                let {
+                    ctx,
+                    program, canvas, ortho: { left, right, bottom, top, near, far } } = this;
+                let u_MvpMatrix = ctx.getUniformLocation(this.program, 'u_MvpMatrix');
                 let viewMatrix = new Matrix4();
+                let modelMatrix = new Matrix4(); // Model matrix
+                let projMatrix = new Matrix4(); // Projection matrix
+                let mvpMatrix = new Matrix4();
                 const FSIZE = Float32Array.BYTES_PER_ELEMENT;
                 let verticesColors = new Float32Array([
-                    // vertex coordinates and color
-                    0.0, 0.5, -0.4, 0.4, 1.0, 0.4, // The back green triangle
-                    -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
-                    0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
+                    // Vertex coordinates and color
+                    0.0, 1.0, -4.0, 0.4, 1.0, 0.4, // The back green triangle
+                    -0.5, -1.0, -4.0, 0.4, 1.0, 0.4,
+                    0.5, -1.0, -4.0, 1.0, 0.4, 0.4,
 
-                    0.5, 0.4, -0.2, 1.0, 0.4, 0.4, // The middle yellow triangle
-                    -0.5, 0.4, -0.2, 1.0, 1.0, 0.4,
-                    0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
+                    0.0, 1.0, -2.0, 1.0, 1.0, 0.4, // The middle yellow triangle
+                    -0.5, -1.0, -2.0, 1.0, 1.0, 0.4,
+                    0.5, -1.0, -2.0, 1.0, 0.4, 0.4,
 
-                    0.0, 0.5, 0.0, 0.4, 0.4, 1.0, // The front blue triangle
-                    -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
-                    0.5, -0.5, 0.0, 1.0, 0.4, 0.4
+                    0.0, 1.0, 0.0, 0.4, 0.4, 1.0, // The front blue triangle
+                    -0.5, -1.0, 0.0, 0.4, 0.4, 1.0,
+                    0.5, -1.0, 0.0, 1.0, 0.4, 0.4
                 ]);
+                if (!this.draw3DTriangle.firstCall) {
+                    this.lookAt = {
+                        eye: {
+                            x: 0,
+                            y: 0,
+                            z: 5
+                        },
+                        look: {
+                            x: 0,
+                            y: 0,
+                            z: -100
+                        },
+                        up: {
+                            x: 0,
+                            y: 1,
+                            z: 0
+                        }
+                    };
+                    this.shape = '3DTriangle';
+                    this.draw3DTriangle.firstCall = true;
+                }
+                let { lookAt: { eye, look, up } } = this;
                 initVertexBuffers({
                     ctx,
                     program,
@@ -170,17 +320,21 @@
                         }
                     ],
                 });
-                viewMatrix.setOrtho(left, right, bottom, top, near, far);
-                let matrix = new Matrix4()
-                    .setLookAt(
-                        x, y, z,   // eye point
-                        0.0, 0.0, 0.0,            // look at point
-                        0.0, 1.0, 0.0             // up point
-                    )
-                    .rotate({ angle: -10, x: 0, y: 0, z: 1 });
-                viewMatrix.multiply(matrix)
-                ctx.uniformMatrix4fv(u_ModelViewMatrix, false, viewMatrix.elements);
+                // viewMatrix.setOrtho(left, right, bottom, top, near, far);
+                modelMatrix.setTranslate({ x: 0.75, y: 0, z: 0 }); // Translate 0.75 units
+                viewMatrix.setLookAt(
+                    eye.x, eye.y, eye.z,
+                    look.x, look.y, look.z,
+                    up.x, up.y, up.z
+                );
+                projMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
+                mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
+                ctx.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
                 ctx.clear(ctx.COLOR_BUFFER_BIT);
+                ctx.drawArrays(ctx.TRIANGLES, 0, 9); // Draw the rectangle
+                modelMatrix.setTranslate({ x: -0.75, y: 0, z: 0 }); // Translate 0.75 units
+                mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
+                ctx.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
                 ctx.drawArrays(ctx.TRIANGLES, 0, 9); // Draw the rectangle
             },
             drawTexture() {
@@ -242,9 +396,9 @@
                 let n = initVertexBuffers({ ctx, program, vertices, attrVar: 'a_Position', size: 2 });
                 let modelMatrix = new Matrix4();
                 let currentAngle = 0.0;
-                let u_ModelViewMatrix = ctx.getUniformLocation(program, 'u_ModelViewMatrix');
+                let u_MvpMatrix = ctx.getUniformLocation(program, 'u_MvpMatrix');
                 let animateRotate = () => {
-                    this.draw(n, currentAngle += 1, modelMatrix, u_ModelViewMatrix);
+                    this.draw(n, currentAngle += 1, modelMatrix, u_MvpMatrix);
                     requestAnimationFrame(animateRotate);// Request that the browser calls animateRotate
                 };
                 animateRotate();
@@ -253,14 +407,14 @@
 
                 // ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
             },
-            draw(n, currentAngle, modelMatrix, u_ModelViewMatrix) {
+            draw(n, currentAngle, modelMatrix, u_MvpMatrix) {
                 let { ctx } = this;
                 // Set up rotation matrix
                 modelMatrix.setRotate({ angle: currentAngle, x: 0, y: 0, z: 1 });
                 modelMatrix.translate({ x: 0.35, y: 0, z: 0 });
 
                 // Pass the rotation matrix to the vertex shader
-                ctx.uniformMatrix4fv(u_ModelViewMatrix, false, modelMatrix.elements);
+                ctx.uniformMatrix4fv(u_MvpMatrix, false, modelMatrix.elements);
 
                 // Clear <canvas>
                 ctx.clear(ctx.COLOR_BUFFER_BIT);
@@ -279,17 +433,12 @@
                 this.program = createProgram({ ctx, vSource: VSHADER_SOURCE, fSource: FSHADER_SOURCE });
                 let a_PointSize = ctx.getAttribLocation(this.program, 'a_PointSize');
                 let u_FragColor = ctx.getUniformLocation(this.program, 'u_FragColor');
-                let u_ModelViewMatrix = ctx.getUniformLocation(this.program, 'u_ModelViewMatrix');
-                ctx.uniformMatrix4fv(u_ModelViewMatrix, false, new Float32Array([
-                    1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, 0,
-                    0, 0, 0, 1,
-                ]));
                 ctx.vertexAttrib1f(a_PointSize, 10.0);
                 ctx.uniform4f(u_FragColor, 0.0, 1.0, 0.0, 1.0);
                 ctx.clearColor(0.0, 0.0, 0.0, 1.0);
-                ctx.clear(ctx.COLOR_BUFFER_BIT);
+                ctx.enable(ctx.DEPTH_TEST);
+                ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+                // ctx.clear(ctx.COLOR_BUFFER_BIT);
             },
             addPoint(e) {
                 let { canvas, g_points, ctx, program } = this;
@@ -311,7 +460,8 @@
         mounted() {
             this.init();
             // this.drawTriangle();
-            this.draw3DTriangle();
+            // this.draw3DTriangle();
+            this.drawCube();
         }
     }
 </script>

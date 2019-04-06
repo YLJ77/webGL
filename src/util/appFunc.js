@@ -30,7 +30,7 @@ export function windowToCanvas({x, y, canvas }) {
     return { x, y }
 }
 
-export function initVertexBuffers({ ctx, vertices, program, verticesInfo }) {
+export function initVertexBuffers({ ctx, vertices, program, verticesInfo, indices }) {
     // Bind the buffer object to target
     ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
     // Write date into the buffer object
@@ -44,6 +44,11 @@ export function initVertexBuffers({ ctx, vertices, program, verticesInfo }) {
         // Enable the assignment to attrLoc variable
         ctx.enableVertexAttribArray(attrLoc);
     });
+    if (indices) {
+        // Write the indices to the buffer object
+        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, ctx.createBuffer());
+        ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices, ctx.STATIC_DRAW);
+    }
 }
 export function initTextures({ ctx, program, uniformVar, imgSrc, count, canDraw = true, textUnit = 0 }) {
     // Get the storage location of uniformVar

@@ -135,7 +135,7 @@ export class Matrix4 {
         return this;
     }
     multiply(other) {
-        this.concat(other);
+        return this.concat(other);
     }
     /**
      * Set the matrix for translation.
@@ -272,7 +272,7 @@ export class Matrix4 {
      * @return this
      */
     setOrtho (left, right, bottom, top, near, far) {
-        var e, rw, rh, rd;
+        let e, rw, rh, rd;
 
         if (left === right || bottom === top || near === far) {
             throw 'null frustum';
@@ -306,4 +306,83 @@ export class Matrix4 {
 
         return this;
     }
+    /**
+     * Set the perspective projection matrix by fovy and aspect.
+     * @param fovy The angle between the upper and lower sides of the frustum.
+     * @param aspect The aspect ratio of the frustum. (width/height)
+     * @param near The distances to the nearer depth clipping plane. This value must be plus value.
+     * @param far The distances to the farther depth clipping plane. This value must be plus value.
+     * @return this
+     */
+    setPerspective (fovy, aspect, near, far) {
+        let e, rd, s, ct;
+
+        if (near === far || aspect === 0) {
+            throw 'null frustum';
+        }
+        if (near <= 0) {
+            throw 'near <= 0';
+        }
+        if (far <= 0) {
+            throw 'far <= 0';
+        }
+
+        fovy = Math.PI * fovy / 180 / 2;
+        s = Math.sin(fovy);
+        if (s === 0) {
+            throw 'null frustum';
+        }
+
+        rd = 1 / (far - near);
+        ct = Math.cos(fovy) / s;
+
+        e = this.elements;
+
+        e[0]  = ct / aspect;
+        e[1]  = 0;
+        e[2]  = 0;
+        e[3]  = 0;
+
+        e[4]  = 0;
+        e[5]  = ct;
+        e[6]  = 0;
+        e[7]  = 0;
+
+        e[8]  = 0;
+        e[9]  = 0;
+        e[10] = -(far + near) * rd;
+        e[11] = -1;
+
+        e[12] = 0;
+        e[13] = 0;
+        e[14] = -2 * near * far * rd;
+        e[15] = 0;
+
+        return this;
+    }
+
+    perspective (fovy, aspect, near, far) {
+        return this.concat(new Matrix4().setPerspective(fovy, aspect, near, far));
+    }
+    /**
+     * Copy matrix.
+     * @param src source matrix
+     * @return this
+     */
+    set (src) {
+        let i, s, d;
+
+        s = src.elements;
+        d = this.elements;
+        if (s === d) {
+            return;
+        }
+
+        for (i = 0; i < 16; ++i) {
+            d[i] = s[i];
+        }
+
+        return this;
+    };
+
 }
