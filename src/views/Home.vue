@@ -49,12 +49,11 @@
                     'attribute vec4 a_Normal;\n' + // Normal
                     'uniform vec3 u_LightColor;\n' + // Light color
                     'uniform vec3 u_LightDirection;\n' + // world coordinate, normalized
+                    'uniform vec3 u_AmbientLight;\n' + // Color of an ambient light
                     'attribute vec4 a_Position;\n' +
                     'attribute float a_PointSize;\n' +
                     'attribute vec4 a_Color;\n' +
                     'varying vec4 v_Color;\n' + // varying variable
-                    'attribute vec2 a_TexCoord;\n' +
-                    'varying vec2 v_TexCoord;\n' +
                     'void main() {\n' +
                         'gl_Position = u_MvpMatrix * a_Position;\n' +
                         'gl_PointSize = a_PointSize;\n' +                    // Set the point size
@@ -64,13 +63,15 @@
                         ' float nDotL = max(dot(u_LightDirection, normal), 0.0);\n' +
                         // Calculate the color due to diffuse reflection
                         ' vec3 diffuse = u_LightColor * vec3(a_Color) * nDotL;\n' +
-                        ' v_Color = vec4(diffuse, a_Color.a);\n' +
+                        // Calculate the color due to ambient reflection
+                        ' vec3 ambient = u_AmbientLight * a_Color.rgb;\n' +
+                        // Add surface colors due to diffuse and ambient reflection
+                        ' v_Color = vec4(diffuse + ambient, a_Color.a);\n' +
                     '}\n',
 
                 // Fragment shader program
                 FSHADER_SOURCE:
                     'precision mediump float;\n' +
-                    // 'uniform vec4 u_FragColor;\n' +
                     'uniform float u_Width;\n' +
                     'uniform float u_Height;\n' +
                     'varying vec4 v_Color;\n' +
@@ -78,13 +79,7 @@
                     'uniform sampler2D u_Sampler1;\n' +
                     'varying vec2 v_TexCoord;\n' +
                     'void main() {\n' +
-                    // '  gl_FragColor = u_FragColor;\n' + // Set the point color
                     '  gl_FragColor = v_Color;\n' + // Receive the data from the vertex shader
-                    // ' gl_FragColor = vec4(gl_FragCoord.x/u_Width, 0.0, gl_FragCoord.y/u_Height, 1.0);\n' +
-                    //     'gl_FragColor = texture2D(u_Sampler, v_TexCoord);\n' +
-                    /*                    ' vec4 color0 = texture2D(u_Sampler0, v_TexCoord);\n' +
-                                        ' vec4 color1 = texture2D(u_Sampler1, v_TexCoord);\n' +
-                                        ' gl_FragColor = color0 * color1;\n' +*/
                     '}\n'
             }
         },
@@ -161,6 +156,7 @@
                 let u_MvpMatrix = ctx.getUniformLocation(program, 'u_MvpMatrix');
                 let u_LightColor = ctx.getUniformLocation(program, 'u_LightColor');
                 let u_LightDirection = ctx.getUniformLocation(program, 'u_LightDirection');
+                let u_AmbientLight = ctx.getUniformLocation(program, 'u_AmbientLight');
                 let viewMatrix = new Matrix4();
                 let modelMatrix = new Matrix4(); // Model matrix
                 let projMatrix = new Matrix4(); // Projection matrix
@@ -206,7 +202,8 @@
                     if (index === 0 || index % 3 === 0) {
                         acc.push(
                             cur, arr[index + 1], arr[index + 2],
-                            colors[index], colors[index + 1], colors[index + 2],
+                            // colors[index], colors[index + 1], colors[index + 2],
+                            1,1,1,
                             normals[index], normals[index + 1], normals[index + 2]
                         );
                     }
@@ -277,6 +274,7 @@
                 let lightDirection = new Vector3([0.5, 3.0, 4.0]);
                 lightDirection.normalize(); // Normalize
                 ctx.uniform3fv(u_LightDirection, lightDirection.elements);
+                ctx.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
                 // viewMatrix.setOrtho(left, right, bottom, top, near, far);
                 modelMatrix.setTranslate({ x: 0.75, y: 0, z: 0 }); // Translate 0.75 units
                 viewMatrix.setLookAt(
@@ -371,57 +369,6 @@
                 mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
                 ctx.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
                 ctx.drawArrays(ctx.TRIANGLES, 0, 9); // Draw the rectangle
-            },
-            drawTexture() {
-                let { ctx, program } = this;
-/*                let verticesSizes = new Float32Array([
-                    0.0, 0.5, 10.0, 1.0, 0.0, 0.0,
-                    -0.5, -0.5, 20.0, 0.0, 1.0, 0.0,
-                    0.5, -0.5, 30.0, 0.0, 0.0, 1.0,
-                ]);*/
-                let verticesTexCoords = new Float32Array([
-                    -0.5, 0.5, 0.0, 1.0,
-                    -0.5, -0.5, 0.0, 0.0,
-                    0.5, 0.5, 1.0, 1.0,
-                    0.5, -0.5, 1.0, 0.0
-                ]);
-                let FSIZE = verticesTexCoords.BYTES_PER_ELEMENT;
-                initVertexBuffers({
-                    ctx,
-                    program,
-                    // vertices: verticesSizes,
-                    vertices: verticesTexCoords,
-                    verticesInfo: [
-                        {
-                            attrVar: 'a_Position',
-                            size: 2,
-                            stride: FSIZE * 4,
-                            offset: 0
-                        },
-                        {
-                            attrVar: 'a_TexCoord',
-                            size: 2,
-                            stride: FSIZE * 4,
-                            offset: FSIZE * 2
-                        }
-/*                        {
-                            attrVar: 'a_PointSize',
-                            size: 1,
-                            stride: FSIZE * 6,
-                            offset: FSIZE * 2
-                        },*/
-/*                        {
-                            attrVar: 'a_Color',
-                            size: 3,
-                            stride: FSIZE * 6,
-                            offset: FSIZE * 3
-                        }*/
-                    ],
-                });
-                // Get the storage location of uniformVar
-                initTextures({ ctx, program, uniformVar: 'u_Sampler0', imgSrc: sky, count: 4, canDraw: false, textUnit: 0 });
-                initTextures({ ctx, program, uniformVar: 'u_Sampler1', imgSrc: circle, count: 4, canDraw: true, textUnit: 1 });
-                // ctx.disableVertexAttribArray(ctx.getAttribLocation(program, 'a_Position'));
             },
             drawTriangle() {
                 let { ctx, program } = this;
