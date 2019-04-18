@@ -52,8 +52,8 @@ export function initVertexBuffers({ ctx, vertices, program, verticesInfo, indice
 }
 export function initTextures({ ctx, program, uniformVar, imgSrc, count, canDraw = true, textUnit = 0 }) {
     // Get the storage location of uniformVar
-    var uniformLoc = ctx.getUniformLocation(program, uniformVar);
-    var image = new Image();  // Create the image object
+    let uniformLoc = ctx.getUniformLocation(program, uniformVar);
+    let image = new Image();  // Create the image object
     // Register the event handler to be called on loading an image
     image.onload = function(){ loadTexture({ ctx, uniformLoc, image, count, canDraw, textUnit }); };
     // Tell the browser to load an image
@@ -80,3 +80,30 @@ export function loadTexture({ ctx, uniformLoc, image, count, textUnit, canDraw }
         ctx.drawArrays(ctx.TRIANGLE_STRIP, 0, count); // Draw the rectangle
     }
 }
+
+
+export function Vector3 (src) {
+    let v = new Float32Array(3);
+    src.forEach((ele, index) => {
+       v[index] = ele;
+    });
+    this.elements = v;
+}
+
+/**
+ * Normalize.
+ * @return this
+ */
+Vector3.prototype.normalize = function() {
+    let v = this.elements;
+    let len = Math.sqrt(v.reduce((acc, cur) => { return acc += cur ** 2 }, 0));
+    if(len){
+        if(len === 1) return this;
+    } else {
+        v.forEach((ele, index) => v[index] = 0);
+        return this;
+    }
+    len = 1/len;
+    v.forEach((ele, index) => v[index] *= len);
+    return this;
+};

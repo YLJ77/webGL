@@ -6,7 +6,7 @@
 
 
 <script>
-    import { createProgram, windowToCanvas, initVertexBuffers, initTextures } from "../util/appFunc";
+    import { Vector3, createProgram, windowToCanvas, initVertexBuffers, initTextures } from "../util/appFunc";
     import { Matrix4 } from "../util/Matrix4";
     import sky from '../assets/sky.jpg'
     import circle from '../assets/circle.gif'
@@ -46,6 +46,9 @@
                 shape: null,
                 VSHADER_SOURCE:
                     'uniform mat4 u_MvpMatrix;\n' +
+                    'attribute vec4 a_Normal;\n' + // Normal
+                    'uniform vec3 u_LightColor;\n' + // Light color
+                    'uniform vec3 u_LightDirection;\n' + // world coordinate, normalized
                     'attribute vec4 a_Position;\n' +
                     'attribute float a_PointSize;\n' +
                     'attribute vec4 a_Color;\n' +
@@ -55,8 +58,13 @@
                     'void main() {\n' +
                         'gl_Position = u_MvpMatrix * a_Position;\n' +
                         'gl_PointSize = a_PointSize;\n' +                    // Set the point size
-                        'v_Color = a_Color;\n' +        // Pass the data to the fragment shader
-                        // 'v_TexCoord = a_TexCoord;\n' +
+                        // Make the length of the normal 1.0
+                        ' vec3 normal = normalize(vec3(a_Normal));\n' +
+                        // Dot product of light direction and orientation of a surface
+                        ' float nDotL = max(dot(u_LightDirection, normal), 0.0);\n' +
+                        // Calculate the color due to diffuse reflection
+                        ' vec3 diffuse = u_LightColor * vec3(a_Color) * nDotL;\n' +
+                        ' v_Color = vec4(diffuse, a_Color.a);\n' +
                     '}\n',
 
                 // Fragment shader program
@@ -150,7 +158,9 @@
                  let {
                     ctx,
                     program, canvas } = this;
-                let u_MvpMatrix = ctx.getUniformLocation(this.program, 'u_MvpMatrix');
+                let u_MvpMatrix = ctx.getUniformLocation(program, 'u_MvpMatrix');
+                let u_LightColor = ctx.getUniformLocation(program, 'u_LightColor');
+                let u_LightDirection = ctx.getUniformLocation(program, 'u_LightDirection');
                 let viewMatrix = new Matrix4();
                 let modelMatrix = new Matrix4(); // Model matrix
                 let projMatrix = new Matrix4(); // Projection matrix
@@ -165,7 +175,7 @@
                 //  |/      |/
                 //  v2------v3
 
-                var vertices = [   // Vertex coordinates
+                let vertices = [   // Vertex coordinates
                     1.0, 1.0, 1.0,  -1.0, 1.0, 1.0,  -1.0,-1.0, 1.0,   1.0,-1.0, 1.0,  // v0-v1-v2-v3 front
                     1.0, 1.0, 1.0,   1.0,-1.0, 1.0,   1.0,-1.0,-1.0,   1.0, 1.0,-1.0,  // v0-v3-v4-v5 right
                     1.0, 1.0, 1.0,   1.0, 1.0,-1.0,  -1.0, 1.0,-1.0,  -1.0, 1.0, 1.0,  // v0-v5-v6-v1 up
@@ -174,7 +184,7 @@
                     1.0,-1.0,-1.0,  -1.0,-1.0,-1.0,  -1.0, 1.0,-1.0,   1.0, 1.0,-1.0   // v4-v7-v6-v5 back
                 ];
 
-                var colors = [     // Colors
+                let colors = [     // Colors
                     0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  0.4, 0.4, 1.0,  // v0-v1-v2-v3 front(blue)
                     0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  0.4, 1.0, 0.4,  // v0-v3-v4-v5 right(green)
                     1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  1.0, 0.4, 0.4,  // v0-v5-v6-v1 up(red)
@@ -183,16 +193,29 @@
                     0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0,  0.4, 1.0, 1.0   // v4-v7-v6-v5 back
                 ];
 
+                let normals = new Float32Array([    // Normal
+                    0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
+                    1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,   1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
+                    0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,   0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
+                    -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
+                    0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,   0.0,-1.0, 0.0,  // v7-v4-v3-v2 down
+                    0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0,   0.0, 0.0,-1.0   // v4-v7-v6-v5 back
+                ]);
+
                 let verCol = vertices.reduce((acc, cur, index, arr) => {
                     if (index === 0 || index % 3 === 0) {
-                        acc.push(cur, arr[index + 1], arr[index + 2], colors[index], colors[index + 1], colors[index + 2]);
+                        acc.push(
+                            cur, arr[index + 1], arr[index + 2],
+                            colors[index], colors[index + 1], colors[index + 2],
+                            normals[index], normals[index + 1], normals[index + 2]
+                        );
                     }
                     return acc;
                 }, []);
 
                 let verticesColors = new Float32Array(verCol);
 
-                var indices = new Uint8Array([       // Indices of the vertices
+                let indices = new Uint8Array([       // Indices of the vertices
                     0, 1, 2,   0, 2, 3,    // front
                     4, 5, 6,   4, 6, 7,    // right
                     8, 9,10,   8,10,11,    // up
@@ -231,17 +254,29 @@
                         {
                             attrVar: 'a_Position',
                             size: 3,
-                            stride: FSIZE * 6,
+                            stride: FSIZE * 9,
                             offset: 0
                         },
                         {
                             attrVar: 'a_Color',
                             size: 3,
-                            stride: FSIZE * 6,
+                            stride: FSIZE * 9,
                             offset: FSIZE * 3
+                        },
+                        {
+                            attrVar: 'a_Normal',
+                            size: 3,
+                            stride: FSIZE * 9,
+                            offset: FSIZE * 6
                         }
                     ],
                 });
+                // Set the light color (white)
+                ctx.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
+                // Set the light direction (in the world coordinate)
+                let lightDirection = new Vector3([0.5, 3.0, 4.0]);
+                lightDirection.normalize(); // Normalize
+                ctx.uniform3fv(u_LightDirection, lightDirection.elements);
                 // viewMatrix.setOrtho(left, right, bottom, top, near, far);
                 modelMatrix.setTranslate({ x: 0.75, y: 0, z: 0 }); // Translate 0.75 units
                 viewMatrix.setLookAt(
