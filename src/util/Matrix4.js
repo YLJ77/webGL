@@ -402,7 +402,7 @@ export class Matrix4 {
         t = e[11];  e[11] = e[14];  e[14] = t;
 
         return this;
-    };
+    }
 
     /**
      * Calculate the inverse matrix of specified matrix, and set to this.
@@ -463,6 +463,6 @@ export class Matrix4 {
         }
 
         return this;
-    };
+    }
 
 }
