@@ -46,6 +46,7 @@
                 shape: null,
                 VSHADER_SOURCE:
                     'uniform mat4 u_MvpMatrix;\n' +
+                    'uniform mat4 u_NormalMatrix;\n'+ // Transformation matrix of normal
                     'attribute vec4 a_Normal;\n' + // Normal
                     'uniform vec3 u_LightColor;\n' + // Light color
                     'uniform vec3 u_LightDirection;\n' + // world coordinate, normalized
@@ -57,8 +58,8 @@
                     'void main() {\n' +
                         'gl_Position = u_MvpMatrix * a_Position;\n' +
                         'gl_PointSize = a_PointSize;\n' +                    // Set the point size
-                        // Make the length of the normal 1.0
-                        ' vec3 normal = normalize(vec3(a_Normal));\n' +
+                        // Recalculate normal with normal matrix and make its length 1.0
+                        ' vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));\n' +
                         // Dot product of light direction and orientation of a surface
                         ' float nDotL = max(dot(u_LightDirection, normal), 0.0);\n' +
                         // Calculate the color due to diffuse reflection
@@ -157,10 +158,12 @@
                 let u_LightColor = ctx.getUniformLocation(program, 'u_LightColor');
                 let u_LightDirection = ctx.getUniformLocation(program, 'u_LightDirection');
                 let u_AmbientLight = ctx.getUniformLocation(program, 'u_AmbientLight');
+                let u_NormalMatrix = ctx.getUniformLocation(program, 'u_NormalMatrix');
                 let viewMatrix = new Matrix4();
                 let modelMatrix = new Matrix4(); // Model matrix
                 let projMatrix = new Matrix4(); // Projection matrix
                 let mvpMatrix = new Matrix4();
+                let normalMatrix = new Matrix4(); // Transformation matrix for normal
                 const FSIZE = Float32Array.BYTES_PER_ELEMENT;
                 // Create a cube
                 //    v6----- v5
@@ -276,7 +279,8 @@
                 ctx.uniform3fv(u_LightDirection, lightDirection.elements);
                 ctx.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
                 // viewMatrix.setOrtho(left, right, bottom, top, near, far);
-                modelMatrix.setTranslate({ x: 0.75, y: 0, z: 0 }); // Translate 0.75 units
+                modelMatrix.setTranslate({ x: 0, y: 1, z: 0 });
+                modelMatrix.rotate({ angle: 90, x:0, y:0, z:1 });
                 viewMatrix.setLookAt(
                     eye.x, eye.y, eye.z,
                     look.x, look.y, look.z,
@@ -285,6 +289,11 @@
                 projMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
                 mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
                 ctx.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+                // Calculate matrix to transform normal based on the model matrix
+                normalMatrix.setInverseOf(modelMatrix);
+                normalMatrix.transpose();
+                // Pass the transformation matrix for normal to u_NormalMatrix
+                ctx.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
                 ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
                 ctx.drawElements(ctx.TRIANGLES, indices.length, ctx.UNSIGNED_BYTE, 0);
             },
