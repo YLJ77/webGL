@@ -140,16 +140,16 @@
                 let { ANGLE_STEP, g_arm1Angle, g_joint1Angle } = this;
                 switch (which) {
                     case 38: // Up arrow key -> the positive rotation of joint1 around the z-axis
-                        if (g_joint1Angle < 135.0) g_joint1Angle += ANGLE_STEP;
+                        if (g_joint1Angle < 135.0) this.g_joint1Angle += ANGLE_STEP;
                         break;
                     case 40: // Down arrow key -> the negative rotation of joint1 around the z-axis
-                        if (g_joint1Angle > -135.0) g_joint1Angle -= ANGLE_STEP;
+                        if (g_joint1Angle > -135.0) this.g_joint1Angle -= ANGLE_STEP;
                         break;
                     case 39: // Right arrow key -> the positive rotation of arm1 around the y-axis
-                        g_arm1Angle = (g_arm1Angle + ANGLE_STEP) % 360;
+                        this.g_arm1Angle = (g_arm1Angle + ANGLE_STEP) % 360;
                         break;
                     case 37: // Left arrow key -> the negative rotation of arm1 around the y-axis
-                        g_arm1Angle = (g_arm1Angle - ANGLE_STEP) % 360;
+                        this.g_arm1Angle = (g_arm1Angle - ANGLE_STEP) % 360;
                         break;
                     default: return; // Skip drawing at no effective action
                 }
@@ -168,7 +168,7 @@
                 this.drawBox(); // Draw
 
                 // Arm2
-                g_modelMatrix.translate(0.0, arm1Length, 0.0); 　　　// Move to joint1
+                g_modelMatrix.translate(0.0, arm1Length, 0.0);  // Move to joint1
                 g_modelMatrix.rotate(g_joint1Angle, 0.0, 0.0, 1.0);  // Rotate around the z-axis
                 g_modelMatrix.scale(1.3, 1.0, 1.3); // Make it a little thicker
                 this.drawBox(); // Draw
