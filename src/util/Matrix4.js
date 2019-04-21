@@ -12,7 +12,7 @@
  * @param sourceMatrix source matrix(option)
  */
 export class Matrix4 {
-    constructor({ sourceMatrix } = {}) {
+    constructor(sourceMatrix) {
         if (sourceMatrix) {
             let { elements: sourceEle } = sourceMatrix;
             let elements = new Float32Array(16);
@@ -36,7 +36,7 @@ export class Matrix4 {
      * @param z The Z coordinate of vector of rotation axis.
      * @return this
      */
-    setRotate ({ angle, x, y, z }) {
+    setRotate (angle, x, y, z) {
         let s, c, len, rlen, nc, xy, yz, zx, xs, ys, zs;
 
         let radian = angle * Math.PI / 180;
@@ -101,7 +101,7 @@ export class Matrix4 {
         return this;
     }
     rotate (angle, x, y, z) {
-        return this.concat(new Matrix4().setRotate({ angle, x, y, z }));
+        return this.concat(new Matrix4().setRotate(angle, x, y, z));
     }
     /**
      * Multiply the matrix from the right.
@@ -170,7 +170,7 @@ export class Matrix4 {
      * @param z The scale factor along the Z axis
      * @return this
      */
-    setScale ({ x, y, z }) {
+    setScale (x, y, z) {
         this.elements = new Float32Array([
             x, 0, 0, 0,
             0, y, 0, 0,
@@ -248,7 +248,7 @@ export class Matrix4 {
         e[15] = 1;
 
         // Translate.
-        return this.translate({ x: -eyeX, y: -eyeY, z: -eyeZ });
+        return this.translate(-eyeX, -eyeY, -eyeZ);
     }
 
     /**
