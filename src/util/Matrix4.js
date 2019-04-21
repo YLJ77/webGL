@@ -12,7 +12,7 @@
  * @param sourceMatrix source matrix(option)
  */
 export class Matrix4 {
-    constructor({ sourceMatrix } = {}) {
+    constructor(sourceMatrix) {
         if (sourceMatrix) {
             let { elements: sourceEle } = sourceMatrix;
             let elements = new Float32Array(16);
@@ -36,7 +36,7 @@ export class Matrix4 {
      * @param z The Z coordinate of vector of rotation axis.
      * @return this
      */
-    setRotate ({ angle, x, y, z }) {
+    setRotate (angle, x, y, z) {
         let s, c, len, rlen, nc, xy, yz, zx, xs, ys, zs;
 
         let radian = angle * Math.PI / 180;
@@ -100,8 +100,8 @@ export class Matrix4 {
         this.elements = new Float32Array(elements);
         return this;
     }
-    rotate ({ angle, x, y, z }) {
-        return this.concat(new Matrix4().setRotate({ angle, x, y, z }));
+    rotate (angle, x, y, z) {
+        return this.concat(new Matrix4().setRotate(angle, x, y, z));
     }
     /**
      * Multiply the matrix from the right.
@@ -144,7 +144,7 @@ export class Matrix4 {
      * @param z The Z value of a translation.
      * @return this
      */
-    setTranslate ({ x, y, z }) {
+    setTranslate (x, y, z) {
         this.elements = new Float32Array([
            1, 0, 0, 0,
            0, 1, 0, 0,
@@ -153,7 +153,7 @@ export class Matrix4 {
         ]);
         return this;
     }
-    translate ({ x, y, z }) {
+    translate (x, y, z) {
         let { elements: e } = this;
         this.elements = new Float32Array([
             e[0],                                    e[1],                                    e[2],                                    e[3],
@@ -170,7 +170,7 @@ export class Matrix4 {
      * @param z The scale factor along the Z axis
      * @return this
      */
-    setScale ({ x, y, z }) {
+    setScale (x, y, z) {
         this.elements = new Float32Array([
             x, 0, 0, 0,
             0, y, 0, 0,
@@ -179,7 +179,7 @@ export class Matrix4 {
         ]);
         return this;
     }
-    scale ({ x, y, z }) {
+    scale (x, y, z) {
         let { elements: e } = this;
         this.elements = new Float32Array([
             e[0]*x, e[1]*x, e[2]*x, e[3]*x,
@@ -248,7 +248,7 @@ export class Matrix4 {
         e[15] = 1;
 
         // Translate.
-        return this.translate({ x: -eyeX, y: -eyeY, z: -eyeZ });
+        return this.translate(-eyeX, -eyeY, -eyeZ);
     }
 
     /**

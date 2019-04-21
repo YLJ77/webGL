@@ -1,25 +1,25 @@
-export function loadShader({ ctx, type, source }) {
-    let shader = ctx.createShader(ctx[type]);
+export function loadShader({ gl, type, source }) {
+    let shader = gl.createShader(gl[type]);
     // Set the shader program
-    ctx.shaderSource(shader, source);
+    gl.shaderSource(shader, source);
     // Compile the shader
-    ctx.compileShader(shader);
+    gl.compileShader(shader);
     return shader;
 }
 
-export function createProgram({ ctx, vSource, fSource }) {
+export function createProgram({ gl, vSource, fSource }) {
     // Initialize shaders
-    let vertexShader = loadShader({ type: 'VERTEX_SHADER', source: vSource, ctx });
-    let fragmentShader = loadShader({ type: 'FRAGMENT_SHADER', source: fSource, ctx });
+    let vertexShader = loadShader({ type: 'VERTEX_SHADER', source: vSource, gl });
+    let fragmentShader = loadShader({ type: 'FRAGMENT_SHADER', source: fSource, gl });
     // Create a program object
-    let program = ctx.createProgram();
+    let program = gl.createProgram();
     // Attach the shader objects
-    ctx.attachShader(program, vertexShader);
-    ctx.attachShader(program, fragmentShader);
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
 
     // Link the program object
-    ctx.linkProgram(program);
-    ctx.useProgram(program);
+    gl.linkProgram(program);
+    gl.useProgram(program);
     return program;
 }
 
@@ -30,54 +30,54 @@ export function windowToCanvas({x, y, canvas }) {
     return { x, y }
 }
 
-export function initVertexBuffers({ ctx, vertices, program, verticesInfo, indices }) {
+export function initVertexBuffers({ gl, vertices, program, verticesInfo, indices }) {
     // Bind the buffer object to target
-    ctx.bindBuffer(ctx.ARRAY_BUFFER, ctx.createBuffer());
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     // Write date into the buffer object
-    ctx.bufferData(ctx.ARRAY_BUFFER, vertices, ctx.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
     verticesInfo.forEach(info => {
         let { attrVar, size, stride, offset } = info;
-        let attrLoc = ctx.getAttribLocation(program, attrVar);
+        let attrLoc = gl.getAttribLocation(program, attrVar);
         // Assign the buffer object to attrLoc variable
-        ctx.vertexAttribPointer(attrLoc, size, ctx.FLOAT, false, stride, offset);
+        gl.vertexAttribPointer(attrLoc, size, gl.FLOAT, false, stride, offset);
         // Enable the assignment to attrLoc variable
-        ctx.enableVertexAttribArray(attrLoc);
+        gl.enableVertexAttribArray(attrLoc);
     });
     if (indices) {
         // Write the indices to the buffer object
-        ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, ctx.createBuffer());
-        ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, indices, ctx.STATIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
     }
 }
-export function initTextures({ ctx, program, uniformVar, imgSrc, count, canDraw = true, textUnit = 0 }) {
+export function initTextures({ gl, program, uniformVar, imgSrc, count, canDraw = true, textUnit = 0 }) {
     // Get the storage location of uniformVar
-    let uniformLoc = ctx.getUniformLocation(program, uniformVar);
+    let uniformLoc = gl.getUniformLocation(program, uniformVar);
     let image = new Image();  // Create the image object
     // Register the event handler to be called on loading an image
-    image.onload = function(){ loadTexture({ ctx, uniformLoc, image, count, canDraw, textUnit }); };
+    image.onload = function(){ loadTexture({ gl, uniformLoc, image, count, canDraw, textUnit }); };
     // Tell the browser to load an image
     image.src = imgSrc;
 }
 
-export function loadTexture({ ctx, uniformLoc, image, count, textUnit, canDraw }) {
-    let texture = ctx.createTexture();
-    ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
+export function loadTexture({ gl, uniformLoc, image, count, textUnit, canDraw }) {
+    let texture = gl.createTexture();
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // Flip the image's y axis
     // Enable texture unit0
-    ctx.activeTexture(ctx[`TEXTURE${ textUnit }`]);
+    gl.activeTexture(gl[`TEXTURE${ textUnit }`]);
     // Bind the texture object to the target
-    ctx.bindTexture(ctx.TEXTURE_2D, texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
 
     // Set the texture parameters
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     // Set the texture image
-    ctx.texImage2D(ctx.TEXTURE_2D, 0, ctx.RGBA, ctx.RGBA, ctx.UNSIGNED_BYTE, image);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
     // Set the texture unit 0 to the sampler
-    ctx.uniform1i(uniformLoc, textUnit);
+    gl.uniform1i(uniformLoc, textUnit);
     if (canDraw) {
-        ctx.clear(ctx.COLOR_BUFFER_BIT);
-        ctx.drawArrays(ctx.TRIANGLE_STRIP, 0, count); // Draw the rectangle
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, count); // Draw the rectangle
     }
 }
 
