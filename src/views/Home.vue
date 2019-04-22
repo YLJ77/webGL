@@ -29,14 +29,6 @@
                         z: 0
                     }
                 },
-                ortho: {
-                    left: -1,
-                    right: 1,
-                    bottom: -1,
-                    top: 1,
-                    near: 0,
-                    far: 2.0
-                },
                 canvas: null,
                 gl: null,
                 g_points: [],
@@ -96,77 +88,15 @@
                 armPro: {},
                 ANGLE_STEP: 3.0,    // The increments of rotation angle (degrees)
                 g_arm1Angle: -90.0, // The rotation angle of arm1 (degrees)
-                g_joint1Angle: 0.0 // The rotation angle of joint1 (degrees)
+                g_joint1Angle: 0.0, // The rotation angle of joint1 (degrees)
+                g_joint2Angle: 0.0, // The rotation angle of joint2 (degrees)
+                g_joint3Angle: 0.0, // The rotation angle of joint3 (degrees)
+                g_matrixStack: [],
             }
         },
         methods: {
-            setEyePoint(e) {
-                let { lookAt: { eye }, ortho, shape } = this;
-                let { which } = e;
-                let codeMapAction = {
-                    39: {               // right
-                        action: 'add',
-                        field: 'x',
-                        variable: eye
-                    },
-                    38: {               // up
-                        action: 'add',
-                        field: 'y',
-                        variable: eye
-                    },
-                    33: {               // PU
-                        action: 'add',
-                        field: 'z',
-                        variable: eye
-                    },
-                    37: {               // left
-                        action: 'reduce',
-                        field: 'x',
-                        variable: eye
-                    },
-                    40: {               // down
-                        action: 'reduce',
-                        field: 'y',
-                        variable: eye
-                    },
-                    34: {               // PD
-                        action: 'reduce',
-                        field: 'z',
-                        variable: eye
-                    },
-                    87: {               // W
-                        action: 'add',
-                        field: 'far',
-                        variable: ortho
-                    },
-                    83: {               // S
-                        action: 'reduce',
-                        field: 'far',
-                        variable: ortho
-                    },
-                    65: {               // A
-                        action: 'reduce',
-                        field: 'near',
-                        variable: ortho
-                    },
-                    68: {               // D
-                        action: 'add',
-                        field: 'near',
-                        variable: ortho
-                    },
-                };
-                if (!codeMapAction[which]) return;
-                let step = 0.1;
-                let { action, field, variable } = codeMapAction[which];
-                if (action === 'add') {
-                    /*if (variable[field] < 1) */variable[field] += step;
-                } else if (action === 'reduce') {
-                    /*if (variable[field] > 0.01) */variable[field] -= step;
-                }
-                this[`draw${ shape }`]();
-            },
             keydown({ which }) {
-                let { g_joint1Angle, ANGLE_STEP, g_arm1Angle } = this;
+                let { g_joint1Angle, ANGLE_STEP, g_arm1Angle, g_joint2Angle, g_joint3Angle } = this;
                 switch (which) {
                     case 38: // Up arrow key -> the positive rotation of joint1 around the z-axis
                         if (g_joint1Angle < 135.0) this.g_joint1Angle += ANGLE_STEP;
@@ -180,6 +110,18 @@
                     case 37: // Left arrow key -> the negative rotation of arm1 around the y-axis
                         this.g_arm1Angle = (g_arm1Angle - ANGLE_STEP) % 360;
                         break;
+                    case 90: // Z key -> the positive rotation of joint2
+                        this.g_joint2Angle = (g_joint2Angle + ANGLE_STEP) % 360;
+                        break;
+                    case 88: // X key -> the negative rotation of joint2
+                        this.g_joint2Angle = (g_joint2Angle - ANGLE_STEP) % 360;
+                        break;
+                    case 86: // V key -> the positive rotation of joint3
+                        if (g_joint3Angle < 60.0) this.g_joint3Angle = (g_joint3Angle + ANGLE_STEP) % 360;
+                        break;
+                    case 67: // C key -> the negative rotation of joint3
+                        if (g_joint3Angle > -60.0) this.g_joint3Angle = (g_joint3Angle - ANGLE_STEP) % 360;
+                        break;
                     default: return; // Skip drawing at no effective action
                 }
                 // Draw the robot arm
@@ -188,7 +130,7 @@
             drawArms() {
                  let {
                     gl,
-                    program, canvas, viewProjMatrix, g_mvpMatrix, g_normalMatrix, g_modelMatrix } = this;
+                    program, canvas, viewProjMatrix, g_modelMatrix } = this;
                 let u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
                 let u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
                 let u_LightDirection = gl.getUniformLocation(program, 'u_LightDirection');
@@ -218,12 +160,12 @@
                 //  v2------v3
 
                 let vertices = [   // Vertex coordinates
-                    1.5, 10.0, 1.5, -1.5, 10.0, 1.5, -1.5,  0.0, 1.5,  1.5,  0.0, 1.5, // v0-v1-v2-v3 front
-                    1.5, 10.0, 1.5,  1.5,  0.0, 1.5,  1.5,  0.0,-1.5,  1.5, 10.0,-1.5, // v0-v3-v4-v5 right
-                    1.5, 10.0, 1.5,  1.5, 10.0,-1.5, -1.5, 10.0,-1.5, -1.5, 10.0, 1.5, // v0-v5-v6-v1 up
-                    -1.5, 10.0, 1.5, -1.5, 10.0,-1.5, -1.5,  0.0,-1.5, -1.5,  0.0, 1.5, // v1-v6-v7-v2 left
-                    -1.5,  0.0,-1.5,  1.5,  0.0,-1.5,  1.5,  0.0, 1.5, -1.5,  0.0, 1.5, // v7-v4-v3-v2 down
-                    1.5,  0.0,-1.5, -1.5,  0.0,-1.5, -1.5, 10.0,-1.5,  1.5, 10.0,-1.5  // v4-v7-v6-v5 back
+                    0.5, 1.0, 0.5, -0.5, 1.0, 0.5, -0.5, 0.0, 0.5,  0.5, 0.0, 0.5, // v0-v1-v2-v3 front
+                    0.5, 1.0, 0.5,  0.5, 0.0, 0.5,  0.5, 0.0,-0.5,  0.5, 1.0,-0.5, // v0-v3-v4-v5 right
+                    0.5, 1.0, 0.5,  0.5, 1.0,-0.5, -0.5, 1.0,-0.5, -0.5, 1.0, 0.5, // v0-v5-v6-v1 up
+                    -0.5, 1.0, 0.5, -0.5, 1.0,-0.5, -0.5, 0.0,-0.5, -0.5, 0.0, 0.5, // v1-v6-v7-v2 left
+                    -0.5, 0.0,-0.5,  0.5, 0.0,-0.5,  0.5, 0.0, 0.5, -0.5, 0.0, 0.5, // v7-v4-v3-v2 down
+                    0.5, 0.0,-0.5, -0.5, 0.0,-0.5, -0.5, 1.0,-0.5,  0.5, 1.0,-0.5  // v4-v7-v6-v5 back
                 ];
 
                 let colors = [     // Colors
@@ -306,7 +248,7 @@
 
                 // Pass the model matrix to u_ModelMatrix
                 gl.uniformMatrix4fv(u_ModelMatrix, false, g_modelMatrix.elements);
-                viewProjMatrix.setPerspective(50, canvas.width/canvas.height, 1, 100);
+                viewProjMatrix.setPerspective(50, canvas.width/canvas.height, 1, 1000);
                 viewProjMatrix.lookAt(
                     eye.x, eye.y, eye.z,
                     look.x, look.y, look.z,
@@ -316,25 +258,58 @@
                 this.draw();
             },
             draw() {
-                let { gl, g_modelMatrix, g_arm1Angle, g_joint1Angle  } = this;
+                let { gl, g_arm1Angle, g_joint1Angle, g_joint2Angle, g_matrixStack, g_joint3Angle  } = this;
                 // Clear color and depth buffer
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+                // Draw a base
+                let baseHeight = 2.0;
+                this.g_modelMatrix.setTranslate(0.0, -12.0, 0.0);
+                this.drawBox({ width: 10.0, height: baseHeight, depth: 10.0 });
+
+
                 // Arm1
                 let arm1Length = 10.0; // Length of arm1
-                g_modelMatrix.setTranslate(0.0, -12.0, 0.0);
-                g_modelMatrix.rotate(g_arm1Angle, 0.0, 1.0, 0.0);    // Rotate around the y-axis
-                this.drawBox(); // Draw
+                // Move onto the base
+                this.g_modelMatrix.translate(0.0, baseHeight, 0.0);
+                this.g_modelMatrix.rotate(g_arm1Angle, 0.0, 1.0, 0.0);    // Rotate around the y-axis
+                this.drawBox({ width: 3.0, height: arm1Length, depth: 3.0 }); // Draw
 
                 // Arm2
-                g_modelMatrix.translate(0.0, arm1Length, 0.0);      // Move to joint1
-                g_modelMatrix.rotate(g_joint1Angle, 0.0, 0.0, 1.0);  // Rotate around the z-axis
-                g_modelMatrix.scale(1.3, 1.0, 1.3); // Make it a little thicker
-                this.drawBox(); // Draw
+                let arm2Length = 10.0;
+                this.g_modelMatrix.translate(0.0, arm1Length, 0.0);      // Move to joint1
+                this.g_modelMatrix.rotate(g_joint1Angle, 0.0, 0.0, 1.0);  // Rotate around the z-axis
+                this.drawBox({ width: 4.0, height: arm2Length, depth: 4.0 }); // Draw
+
+                //  A palm
+                let palmLength = 2.0;
+                // Move to palm
+                this.g_modelMatrix.translate(0.0, arm2Length, 0.0);
+                // Rotate around the y-axis
+                this.g_modelMatrix.rotate(g_joint2Angle, 0.0, 1.0, 0.0);
+                this.drawBox({ width: 2.0, height: palmLength, depth: 6.0 });
+
+                // Move to the center of the tip of the palm
+                this.g_modelMatrix.translate(0.0, palmLength, 0.0);
+                // Draw finger1
+                g_matrixStack.push(new Matrix4(this.g_modelMatrix));
+                this.g_modelMatrix.translate(0.0, 0.0, 2.0);
+                this.g_modelMatrix.rotate(g_joint3Angle, 1.0, 0.0, 0.0);
+                this.drawBox({ width: 1.0, height: 2.0, depth: 1.0 });
+                this.g_modelMatrix = g_matrixStack.pop();
+
+                // Draw finger2
+                this.g_modelMatrix.translate(0.0, 0.0, -2.0);
+                this.g_modelMatrix.rotate(-g_joint3Angle, 1.0, 0.0, 0.0);
+                this.drawBox({ width: 1.0, height: 2.0, depth: 1.0 });
             },
-            drawBox() {
-                let { gl, g_mvpMatrix, g_normalMatrix, g_modelMatrix, viewProjMatrix } = this;
+            drawBox({ width, height, depth }) {
+                let { gl, g_mvpMatrix, g_normalMatrix, g_modelMatrix, viewProjMatrix, g_matrixStack } = this;
                 let { armPro: { u_MvpMatrix, u_NormalMatrix } } = this;
+                // Save the model matrix
+                g_matrixStack.push(new Matrix4(g_modelMatrix));
+                // Scale a cube and draw
+                g_modelMatrix.scale(width, height, depth);
                 // Calculate the model view project matrix and pass it to u_MvpMatrix
                 g_mvpMatrix.set(viewProjMatrix).multiply(g_modelMatrix);
                 gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
@@ -344,88 +319,8 @@
                 gl.uniformMatrix4fv(u_NormalMatrix, false, g_normalMatrix.elements);
                 // Draw
                 gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
-            },
-            draw3DTriangle() {
-                let {
-                    gl,
-                    program, canvas, ortho: { left, right, bottom, top, near, far } } = this;
-                let u_MvpMatrix = gl.getUniformLocation(this.program, 'u_MvpMatrix');
-                let viewMatrix = new Matrix4();
-                let modelMatrix = new Matrix4(); // Model matrix
-                let projMatrix = new Matrix4(); // Projection matrix
-                let g_mvpMatrix = new Matrix4();
-                const FSIZE = Float32Array.BYTES_PER_ELEMENT;
-                let verticesColors = new Float32Array([
-                    // Vertex coordinates and color
-                    0.0, 1.0, -4.0, 0.4, 1.0, 0.4, // The back green triangle
-                    -0.5, -1.0, -4.0, 0.4, 1.0, 0.4,
-                    0.5, -1.0, -4.0, 1.0, 0.4, 0.4,
-
-                    0.0, 1.0, -2.0, 1.0, 1.0, 0.4, // The middle yellow triangle
-                    -0.5, -1.0, -2.0, 1.0, 1.0, 0.4,
-                    0.5, -1.0, -2.0, 1.0, 0.4, 0.4,
-
-                    0.0, 1.0, 0.0, 0.4, 0.4, 1.0, // The front blue triangle
-                    -0.5, -1.0, 0.0, 0.4, 0.4, 1.0,
-                    0.5, -1.0, 0.0, 1.0, 0.4, 0.4
-                ]);
-                if (!this.draw3DTriangle.firstCall) {
-                    this.lookAt = {
-                        eye: {
-                            x: 0,
-                            y: 0,
-                            z: 5
-                        },
-                        look: {
-                            x: 0,
-                            y: 0,
-                            z: -100
-                        },
-                        up: {
-                            x: 0,
-                            y: 1,
-                            z: 0
-                        }
-                    };
-                    this.shape = '3DTriangle';
-                    this.draw3DTriangle.firstCall = true;
-                }
-                let { lookAt: { eye, look, up } } = this;
-                initVertexBuffers({
-                    gl,
-                    program,
-                    vertices: verticesColors,
-                    verticesInfo: [
-                        {
-                            attrVar: 'a_Position',
-                            size: 3,
-                            stride: FSIZE * 6,
-                            offset: 0
-                        },
-                        {
-                            attrVar: 'a_Color',
-                            size: 3,
-                            stride: FSIZE * 6,
-                            offset: FSIZE * 3
-                        }
-                    ],
-                });
-                // viewMatrix.setOrtho(left, right, bottom, top, near, far);
-                modelMatrix.setTranslate({ x: 0.75, y: 0, z: 0 }); // Translate 0.75 units
-                viewMatrix.setLookAt(
-                    eye.x, eye.y, eye.z,
-                    look.x, look.y, look.z,
-                    up.x, up.y, up.z
-                );
-                projMatrix.setPerspective(30, canvas.width/canvas.height, 1, 100);
-                g_mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
-                gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.drawArrays(gl.TRIANGLES, 0, 9); // Draw the rectangle
-                modelMatrix.setTranslate({ x: -0.75, y: 0, z: 0 }); // Translate 0.75 units
-                g_mvpMatrix.set(projMatrix).multiply(viewMatrix).multiply(modelMatrix);
-                gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
-                gl.drawArrays(gl.TRIANGLES, 0, 9); // Draw the rectangle
+                // Retrieve the model matrix
+                this.g_modelMatrix = g_matrixStack.pop();
             },
             init() {
                 let { VSHADER_SOURCE, FSHADER_SOURCE } = this;
