@@ -1,5 +1,10 @@
 <template>
-    <canvas id="webgl" width="400" height="400" @keydown="keydown" tabindex="1">
+    <canvas id="webgl" width="400" height="400"
+            @keydown="onKeydown"
+            @mousedown="onMousedown"
+            @mousemove="onMousemove"
+            @mouseup="onMouseup"
+            tabindex="1">
         Please use a browser that supports "canvas"
     </canvas>
 </template>
@@ -92,10 +97,45 @@
                 g_joint2Angle: 0.0, // The rotation angle of joint2 (degrees)
                 g_joint3Angle: 0.0, // The rotation angle of joint3 (degrees)
                 g_matrixStack: [],
+                angle: {
+                    x: 0,
+                    y: 0
+                },
+                dragging: false,
+                mousedown: {
+                    x: null,
+                    y: null
+                }
             }
         },
         methods: {
-            keydown({ which }) {
+            onMousedown({ clientX: x, clientY: y, target }) {
+                let { left, right, top, bottom } = target.getBoundingClientRect();
+                let { mousedown } = this;
+                // Start dragging if a mouse is in <canvas>
+                if (left <= x && x < right && top <= y && y < bottom) {
+                    this.dragging = true;
+                    mousedown.x = x;
+                    mousedown.y = y;
+                }
+            },
+            onMousemove({ clientX: x, clientY: y }) {
+                  let { mousedown, dragging, canvas, angle } = this;
+                  if (dragging) {
+                      // The rotation ratio
+                      let factor = 100 / canvas.height;
+                      let dx = factor * (x - mousedown.x);
+                      let dy = factor * (y - mousedown.y);
+                      angle.x += dx;
+                      angle.y += dy;
+                      mousedown.x = x;
+                      mousedown.y = y;
+                  }
+            },
+            onMouseup() {
+                this.dragging = false;
+            },
+            onKeydown({ which }) {
                 let { g_joint1Angle, ANGLE_STEP, g_arm1Angle, g_joint2Angle, g_joint3Angle } = this;
                 switch (which) {
                     case 38: // Up arrow key -> the positive rotation of joint1 around the z-axis
@@ -130,7 +170,7 @@
             drawArms() {
                  let {
                     gl,
-                    program, canvas, viewProjMatrix, g_modelMatrix } = this;
+                    program, canvas, viewProjMatrix } = this;
                 let u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
                 let u_LightColor = gl.getUniformLocation(program, 'u_LightColor');
                 let u_LightDirection = gl.getUniformLocation(program, 'u_LightDirection');
@@ -147,8 +187,6 @@
                     u_ModelMatrix,
                     u_LightPosition
                 };
-/*                let viewMatrix = new Matrix4();
-                let projMatrix = new Matrix4(); // Projection matrix*/
                 const FSIZE = Float32Array.BYTES_PER_ELEMENT;
                 // Create a cube
                 //    v6----- v5
@@ -246,8 +284,6 @@
                 gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
                 // viewMatrix.setOrtho(left, right, bottom, top, near, far);
 
-                // Pass the model matrix to u_ModelMatrix
-                gl.uniformMatrix4fv(u_ModelMatrix, false, g_modelMatrix.elements);
                 viewProjMatrix.setPerspective(50, canvas.width/canvas.height, 1, 1000);
                 viewProjMatrix.lookAt(
                     eye.x, eye.y, eye.z,
@@ -258,13 +294,22 @@
                 this.draw();
             },
             draw() {
-                let { gl, g_arm1Angle, g_joint1Angle, g_joint2Angle, g_matrixStack, g_joint3Angle  } = this;
+                let { gl,
+                    g_arm1Angle,
+                    g_joint1Angle,
+                    g_joint2Angle,
+                    g_matrixStack,
+                    g_joint3Angle,
+                    angle
+                } = this;
                 // Clear color and depth buffer
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
                 // Draw a base
                 let baseHeight = 2.0;
                 this.g_modelMatrix.setTranslate(0.0, -12.0, 0.0);
+                this.g_modelMatrix.rotate(angle.y, 1, 0, 0);
+                this.g_modelMatrix.rotate(angle.x, 0, 1, 0);
                 this.drawBox({ width: 10.0, height: baseHeight, depth: 10.0 });
 
 
@@ -302,14 +347,17 @@
                 this.g_modelMatrix.translate(0.0, 0.0, -2.0);
                 this.g_modelMatrix.rotate(-g_joint3Angle, 1.0, 0.0, 0.0);
                 this.drawBox({ width: 1.0, height: 2.0, depth: 1.0 });
+                requestAnimationFrame(this.draw);
             },
             drawBox({ width, height, depth }) {
                 let { gl, g_mvpMatrix, g_normalMatrix, g_modelMatrix, viewProjMatrix, g_matrixStack } = this;
-                let { armPro: { u_MvpMatrix, u_NormalMatrix } } = this;
+                let { armPro: { u_MvpMatrix, u_NormalMatrix, u_ModelMatrix } } = this;
                 // Save the model matrix
                 g_matrixStack.push(new Matrix4(g_modelMatrix));
                 // Scale a cube and draw
                 g_modelMatrix.scale(width, height, depth);
+                // Pass the model matrix to u_ModelMatrix
+                gl.uniformMatrix4fv(u_ModelMatrix, false, g_modelMatrix.elements);
                 // Calculate the model view project matrix and pass it to u_MvpMatrix
                 g_mvpMatrix.set(viewProjMatrix).multiply(g_modelMatrix);
                 gl.uniformMatrix4fv(u_MvpMatrix, false, g_mvpMatrix.elements);
