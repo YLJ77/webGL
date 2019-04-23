@@ -11,7 +11,7 @@
 
 
 <script>
-    import { Vector3, createProgram, windowToCanvas, initVertexBuffers } from "../util/appFunc";
+    import { Vector3, createProgram, windowToWebGL, initVertexBuffers, windowToCanvas } from "../util/appFunc";
     import { Matrix4 } from "../util/Matrix4";
 
     export default {
@@ -52,6 +52,7 @@
                     'attribute float a_PointSize;\n' +
                     'attribute vec4 a_Color;\n' +
                     'varying vec4 v_Color;\n' + // varying variable
+                    'uniform bool u_Clicked;\n' + // Mouse is clicked
                     'varying vec3 v_Normal;\n' +
                     'varying vec3 v_Position;\n' +
                 'void main() {\n' +
@@ -75,8 +76,13 @@
                         ' vec3 diffuse = u_LightColor * vec3(a_Color) * nDotL;\n' +
                         // Calculate the color due to ambient reflection
                         ' vec3 ambient = u_AmbientLight * a_Color.rgb;\n' +
+                        ' if (u_Clicked) {\n' +
+                        // Draw in red if mouse is clicked
+                        '   v_Color = vec4(1.0, 0.0, 0.0, 1.0);\n' +
+                        ' } else {\n' +
                         // Add surface colors due to diffuse and ambient reflection
-                        ' v_Color = vec4(diffuse + ambient, a_Color.a);\n' +
+                        '   v_Color = vec4(diffuse + ambient, a_Color.a);\n' +
+                        ' }\n' +
                     '}\n',
 
                 // Fragment shader program
@@ -109,6 +115,48 @@
             }
         },
         methods: {
+            setArmsColorByRandom() {
+                let color = [Math.random(), Math.random(), Math.random()];
+                let colors = [];
+                let { program, gl } = this;
+                const FSIZE = Float32Array.BYTES_PER_ELEMENT;
+                for (let i=0; i<24; i++) {
+                    colors.push(...color);
+                }
+                initVertexBuffers({
+                    gl,
+                    program,
+                    vertices: new Float32Array(colors),
+                    verticesInfo: [
+                        {
+                            attrVar: 'a_Color',
+                            size: 3,
+                            stride: FSIZE * 3,
+                            offset: 0
+                        },
+                    ],
+                });
+            },
+            checkLocInArms({ x, y }) {
+                let picked = false;
+                let { armPro: { u_Clicked }, gl, canvas } = this;
+                let loc = windowToCanvas({ x, y, canvas });
+                // Pass true to u_Clicked
+                gl.uniform1i(u_Clicked, 1);
+                // Draw arms with red
+                this.draw();
+                // Array for storing the pixel value
+                let pixels = new Uint8Array(4);
+                // Read pixel at the clicked position
+                gl.readPixels(loc.x, loc.y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                // The mouse in on arms if R(pixels[0) is 255
+                if (pixels[0] === 255) {
+                    picked = true;
+                }
+                // Pass false to u_Clicked(rewrite the arms)
+                gl.uniform1i(u_Clicked, 0);
+                return picked;
+            },
             onMousedown({ clientX: x, clientY: y, target }) {
                 let { left, right, top, bottom } = target.getBoundingClientRect();
                 let { mousedown } = this;
@@ -117,6 +165,8 @@
                     this.dragging = true;
                     mousedown.x = x;
                     mousedown.y = y;
+                    // 如果点中手臂，则改变手臂颜色
+                    if (this.checkLocInArms({ x, y })) this.setArmsColorByRandom();
                 }
             },
             onMousemove({ clientX: x, clientY: y }) {
@@ -178,6 +228,7 @@
                 let u_NormalMatrix = gl.getUniformLocation(program, 'u_NormalMatrix');
                 let u_ModelMatrix = gl.getUniformLocation(program, 'u_ModelMatrix');
                 let u_LightPosition = gl.getUniformLocation(program, 'u_LightPosition');
+                let u_Clicked = gl.getUniformLocation(program, 'u_Clicked');
                 this.armPro = {
                     u_MvpMatrix,
                     u_LightColor,
@@ -185,7 +236,8 @@
                     u_AmbientLight,
                     u_NormalMatrix,
                     u_ModelMatrix,
-                    u_LightPosition
+                    u_LightPosition,
+                    u_Clicked
                 };
                 const FSIZE = Float32Array.BYTES_PER_ELEMENT;
                 // Create a cube
@@ -273,6 +325,8 @@
                         }
                     ],
                 });
+                // Pass false to u_Clicked
+                gl.uniform1i(u_Clicked, 0);
                 // Set the light color (white)
                 gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
                 // Set the position of the light source (in the world coordinate)
@@ -391,7 +445,7 @@
             addPoint(e) {
                 let { canvas, g_points, gl, program } = this;
                 let { clientX: x, clientY: y } = e;
-                let loc = windowToCanvas({ x, y, canvas });
+                let loc = windowToWebGL({ x, y, canvas });
                 let a_Position = gl.getAttribLocation(program, 'a_Position');
                 loc.color = [Math.random(), Math.random(), Math.random(), 1.0],
                 g_points.push(loc);

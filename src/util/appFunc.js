@@ -23,11 +23,19 @@ export function createProgram({ gl, vSource, fSource }) {
     return program;
 }
 
-export function windowToCanvas({x, y, canvas }) {
+export function windowToWebGL({x, y, canvas }) {
     let rect = canvas.getBoundingClientRect();
     x = ((x - rect.left) - canvas.width/2)/(canvas.width/2);
     y = (canvas.height/2 - (y - rect.top))/(canvas.height/2);
     return { x, y }
+}
+
+export function windowToCanvas({ x, y, canvas }) {
+    let rect = canvas.getBoundingClientRect();
+    return {
+        x: x - rect.left,
+        y: rect.bottom - y
+    }
 }
 
 export function initVertexBuffers({ gl, vertices, program, verticesInfo, indices }) {
