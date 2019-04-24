@@ -1,6 +1,6 @@
 # robot arms / 机械臂
 
-## [演示环境(https://github.com/YLJ77/webGL)](https://github.com/YLJ77/webGL)
+## [演示环境(https://ylj77.github.io/webGL)](https://ylj77.github.io/webGL)
 
 ## Project setup
 ```
