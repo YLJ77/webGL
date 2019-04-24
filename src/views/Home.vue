@@ -1,12 +1,18 @@
 <template>
-    <canvas id="webgl" width="400" height="400"
-            @keydown="onKeydown"
-            @mousedown="onMousedown"
-            @mousemove="onMousemove"
-            @mouseup="onMouseup"
-            tabindex="1">
-        Please use a browser that supports "canvas"
-    </canvas>
+    <div>
+        <canvas id="webgl" width="400" height="400"
+                @keydown="onKeydown"
+                @mousedown="onMousedown"
+                @mousemove="onMousemove"
+                @mouseup="onMouseup"
+                tabindex="1">
+            Please use a browser that supports "canvas"
+        </canvas>
+        <p>1)⬅➡⬆⬇: 调整角度</p>
+        <p>2)zwcv: 调整手掌、手指角度</p>
+        <p>3)鼠标拖拽旋转</p>
+        <p>4)选中手臂改变颜色</p>
+    </div>
 </template>
 
 
