@@ -1,4 +1,4 @@
-# test-canvas
+# robot arms / 机械臂
 
 ## Project setup
 ```
@@ -24,6 +24,3 @@ npm run test
 ```
 npm run lint
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
