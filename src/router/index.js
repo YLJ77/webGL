@@ -9,7 +9,11 @@ const routes = [
     path: '/',
     name: 'home',
     component: Home
-  }
+  },
+    {
+      path: '/point',
+        component: () => import('@/views/point/index')
+    }
 ]
 
 const router = new VueRouter({

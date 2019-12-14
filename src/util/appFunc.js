@@ -7,7 +7,7 @@ export function loadShader({ gl, type, source }) {
     return shader;
 }
 
-export function createProgram({ gl, vSource, fSource }) {
+export function initShader({ gl, vSource, fSource }) {
     // Initialize shaders
     let vertexShader = loadShader({ type: 'VERTEX_SHADER', source: vSource, gl });
     let fragmentShader = loadShader({ type: 'FRAGMENT_SHADER', source: fSource, gl });
@@ -16,10 +16,10 @@ export function createProgram({ gl, vSource, fSource }) {
     // Attach the shader objects
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
-
     // Link the program object
     gl.linkProgram(program);
     gl.useProgram(program);
+    gl.program = program;
     return program;
 }
 

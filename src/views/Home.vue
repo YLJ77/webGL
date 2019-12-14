@@ -11,7 +11,7 @@
 
 
 <script>
-    import { Vector3, createProgram, windowToWebGL, initVertexBuffers, windowToCanvas } from "../util/appFunc";
+    import { Vector3, initShader, windowToWebGL, initVertexBuffers, windowToCanvas } from "../util/appFunc";
     import { Matrix4 } from "../util/Matrix4";
 
     export default {
@@ -432,7 +432,7 @@
                 // Get the rendering context for WebGL
                 this.gl = this.canvas.getContext('webgl');
                 let { gl } = this;
-                this.program = createProgram({ gl, vSource: VSHADER_SOURCE, fSource: FSHADER_SOURCE });
+                this.program = initShader({ gl, vSource: VSHADER_SOURCE, fSource: FSHADER_SOURCE });
                 let a_PointSize = gl.getAttribLocation(this.program, 'a_PointSize');
                 let u_FragColor = gl.getUniformLocation(this.program, 'u_FragColor');
                 gl.vertexAttrib1f(a_PointSize, 10.0);
