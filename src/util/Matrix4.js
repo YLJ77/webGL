@@ -35,41 +35,41 @@ export class Matrix4 {
      * @return this
      */
     setRotate (angle, x, y, z) {
-        let s, c, len, rlen, nc, xy, yz, zx, xs, ys, zs;
+        let sin, cos, len, rlen, nc, xy, yz, zx, xs, ys, zs;
 
         let radian = angle * Math.PI / 180;
         let elements;
 
-        s = Math.sin(radian);
-        c = Math.cos(radian);
+        sin = Math.sin(radian);
+        cos = Math.cos(radian);
 
         if (0 !== x && 0 === y && 0 === z) {  // Rotation around X axis
             if (x < 0) {
-                s = -s;
+                sin = -sin;
             }
             elements = [
                 1, 0, 0, 0,
-                0, c, s, 0,
-                0, -s, c, 0,
+                0, cos, sin, 0,
+                0, -sin, cos, 0,
                 0, 0, 0, 1
             ];
         } else if (0 === x && 0 !== y && 0 === z) { // Rotation around Y axis
             if (y < 0) {
-                s = -s;
+                sin = -sin;
             }
             elements = [
-                c, 0, -s, 0,
+                cos, 0, -sin, 0,
                 0, 1, 0, 0,
-                s, 0, c, 0,
+                sin, 0, cos, 0,
                 0, 0, 0, 1
             ];
         } else if (0 === x && 0 === y && 0 !== z) { // Rotation around Z axis
             if (z < 0) {
-                s = -s;
+                sin = -sin;
             }
             elements = [
-                c, s, 0, 0,
-                -s, c, 0, 0,
+                cos, sin, 0, 0,
+                -sin, cos, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1
             ];
@@ -81,17 +81,17 @@ export class Matrix4 {
                 y *= rlen;
                 z *= rlen;
             }
-            nc = 1 - c;
+            nc = 1 - cos;
             xy = x * y;
             yz = y * z;
             zx = z * x;
-            xs = x * s;
-            ys = y * s;
-            zs = z * s;
+            xs = x * sin;
+            ys = y * sin;
+            zs = z * sin;
             elements = [
-                x*x*nc +  c, xy *nc + zs, zx *nc - ys, 0,
-                xy *nc - zs, y*y*nc +  c, yz *nc + xs, 0,
-                zx *nc + ys, yz *nc - xs, z*z*nc +  c, 0,
+                x*x*nc +  cos, xy *nc + zs, zx *nc - ys, 0,
+                xy *nc - zs, y*y*nc +  cos, yz *nc + xs, 0,
+                zx *nc + ys, yz *nc - xs, z*z*nc +  cos, 0,
                 0, 0, 0, 1
             ];
         }

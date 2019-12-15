@@ -9,6 +9,7 @@
     import { initVertexBuffers } from "@/util/appFunc";
     import pointVS from '@/views/point/shaders/point.vert'
     import pointFS from '@/views/point/shaders/point.frag'
+    import { mat4, vec3 } from 'gl-matrix'
 
     export default {
         mixins: [loadShader],
@@ -25,26 +26,19 @@
                 const u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
                 const u_Translation = gl.getUniformLocation(gl.program, 'u_Translation');
                 // Rotation angle
-                const ANGLE = 30.0;
+                const ANGLE = 60.0;
                 // Pass the data required to rotate the shape to the vertex shader
                 const radian = Math.PI * ANGLE / 180.0; // Convert to radians
-                const cosB = Math.cos(radian);
-                const sinB = Math.sin(radian);
-
-                const xformMatrix = new Float32Array([
-                    cosB, sinB, 0.0, 0.0,
-                    -sinB, 1.5*cosB, 0.0, 0.0,
-                    0.0, 0.0, 1.0, 0.0,
-                    0.5, 0.5, 0.0, 1.0
-                ]);
+                // Create Matrix4 object for a rotation matrix
+                const xformMatrix = mat4.create();
+                mat4.rotateZ(xformMatrix, xformMatrix, radian);
+                mat4.translate(xformMatrix, xformMatrix, vec3.set(vec3.create(),0.5,0.5,0))
+                // Pass the rotation matrix to the vertex shader
+                gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix );
 
                 // Pass the rotation matrix to the vertex shader
                 const u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
                 gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
-/*                const u_CosB = gl.getUniformLocation(gl.program, 'u_CosB');
-                const u_SinB = gl.getUniformLocation(gl.program, 'u_SinB');
-                gl.uniform1f(u_CosB, cosB);
-                gl.uniform1f(u_SinB, sinB);*/
                 gl.uniform4fv(u_FragColor, new Float32Array([1.0,1,0,1.0]));
                 gl.uniform4f(u_Translation, 0.5, 0.5, 0, 0.0);
                 gl.vertexAttrib1f(a_PointSize, 10);
