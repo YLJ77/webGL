@@ -263,6 +263,14 @@
     "@babel/helper-plugin-utils" "^7.0.0"
     "@babel/plugin-syntax-decorators" "^7.7.4"
 
+"@babel/plugin-proposal-do-expressions@^7.6.0":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-do-expressions/-/plugin-proposal-do-expressions-7.7.4.tgz#5ef927f0426d22ac9319664fef0630b1e96fe730"
+  integrity sha512-CxJW0HmbZlprTIwwEV77hBS8Yc4Jt58fafxXqTQxXg/O6SNtBYvceBIZ091ffmhm/fEnYJPqz8QCGMmZU8bK8g==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+    "@babel/plugin-syntax-do-expressions" "^7.7.4"
+
 "@babel/plugin-proposal-dynamic-import@^7.7.4":
   version "7.7.4"
   resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-dynamic-import/-/plugin-proposal-dynamic-import-7.7.4.tgz#dde64a7f127691758cbfed6cf70de0fa5879d52d"
@@ -279,6 +287,14 @@
     "@babel/helper-plugin-utils" "^7.0.0"
     "@babel/plugin-syntax-json-strings" "^7.7.4"
 
+"@babel/plugin-proposal-logical-assignment-operators@^7.2.0":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-logical-assignment-operators/-/plugin-proposal-logical-assignment-operators-7.7.4.tgz#e972f5d4b446d9a139b299ad275f032710ef783e"
+  integrity sha512-vOHiM06HgN6IUm7cmqvhqnhCmkkVUeFTAP0GWhgTl36+0/r65TG7Bkp21rviL+tWqRKlx4DWr090cwaW8ZU5TA==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+    "@babel/plugin-syntax-logical-assignment-operators" "^7.7.4"
+
 "@babel/plugin-proposal-object-rest-spread@^7.7.4":
   version "7.7.4"
   resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-object-rest-spread/-/plugin-proposal-object-rest-spread-7.7.4.tgz#cc57849894a5c774214178c8ab64f6334ec8af71"
@@ -294,6 +310,22 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.0.0"
     "@babel/plugin-syntax-optional-catch-binding" "^7.7.4"
+
+"@babel/plugin-proposal-optional-chaining@^7.2.0":
+  version "7.7.5"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-optional-chaining/-/plugin-proposal-optional-chaining-7.7.5.tgz#f0835f044cef85b31071a924010a2a390add11d4"
+  integrity sha512-sOwFqT8JSchtJeDD+CjmWCaiFoLxY4Ps7NjvwHC/U7l4e9i5pTRNt8nDMIFSOUL+ncFbYSwruHM8WknYItWdXw==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+    "@babel/plugin-syntax-optional-chaining" "^7.7.4"
+
+"@babel/plugin-proposal-pipeline-operator@^7.5.0":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-proposal-pipeline-operator/-/plugin-proposal-pipeline-operator-7.7.4.tgz#d61724b4f207b0a7c08e9182e8e36fda2d93e384"
+  integrity sha512-+ZczeVHN5Ny2R5kHnvxnK0U+tFiarWzX+aMKsw3uugdn4WIrUOsJ7eRX2dIRwBKUT/c8QgzT3rQGsIDlPkchBQ==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+    "@babel/plugin-syntax-pipeline-operator" "^7.7.4"
 
 "@babel/plugin-proposal-unicode-property-regex@^7.7.4":
   version "7.7.4"
@@ -314,6 +346,13 @@
   version "7.7.4"
   resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-decorators/-/plugin-syntax-decorators-7.7.4.tgz#3c91cfee2a111663ff3ac21b851140f5a52a4e0b"
   integrity sha512-0oNLWNH4k5ZbBVfAwiTU53rKFWIeTh6ZlaWOXWJc4ywxs0tjz5fc3uZ6jKAnZSxN98eXVgg7bJIuzjX+3SXY+A==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+
+"@babel/plugin-syntax-do-expressions@^7.7.4":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-do-expressions/-/plugin-syntax-do-expressions-7.7.4.tgz#023354f9671715fe329032d3b7213e645917c548"
+  integrity sha512-jGOok7z85xzG+vMG13C/POqawE2diUkwiKB7H7IP1UYzZqdxObgJsm3YHZSvh9w0rMR+NIBeIUnDbmyDNN/QGg==
   dependencies:
     "@babel/helper-plugin-utils" "^7.0.0"
 
@@ -338,6 +377,13 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.0.0"
 
+"@babel/plugin-syntax-logical-assignment-operators@^7.7.4":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-logical-assignment-operators/-/plugin-syntax-logical-assignment-operators-7.7.4.tgz#630f17d39b2efccbd7ddebb3844e389d606d884d"
+  integrity sha512-gNtCBpD7ENcpBz8v/ijzs2XsMrw+1eruYvg4/NVIohhDmL/qS1dIs22pcbKe0+DQWoKFuC0rVWo03VFjueafsQ==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+
 "@babel/plugin-syntax-object-rest-spread@^7.7.4":
   version "7.7.4"
   resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-object-rest-spread/-/plugin-syntax-object-rest-spread-7.7.4.tgz#47cf220d19d6d0d7b154304701f468fc1cc6ff46"
@@ -349,6 +395,20 @@
   version "7.7.4"
   resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-optional-catch-binding/-/plugin-syntax-optional-catch-binding-7.7.4.tgz#a3e38f59f4b6233867b4a92dcb0ee05b2c334aa6"
   integrity sha512-4ZSuzWgFxqHRE31Glu+fEr/MirNZOMYmD/0BhBWyLyOOQz/gTAl7QmWm2hX1QxEIXsr2vkdlwxIzTyiYRC4xcQ==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+
+"@babel/plugin-syntax-optional-chaining@^7.7.4":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-optional-chaining/-/plugin-syntax-optional-chaining-7.7.4.tgz#c91fdde6de85d2eb8906daea7b21944c3610c901"
+  integrity sha512-2MqYD5WjZSbJdUagnJvIdSfkb/ucOC9/1fRJxm7GAxY6YQLWlUvkfxoNbUPcPLHJyetKUDQ4+yyuUyAoc0HriA==
+  dependencies:
+    "@babel/helper-plugin-utils" "^7.0.0"
+
+"@babel/plugin-syntax-pipeline-operator@^7.7.4":
+  version "7.7.4"
+  resolved "https://registry.yarnpkg.com/@babel/plugin-syntax-pipeline-operator/-/plugin-syntax-pipeline-operator-7.7.4.tgz#8bfe2648196829f1c442ae7087f2ad92083415f8"
+  integrity sha512-llA4gBPpZWeEQLll8q0FYTLQ/PyITMxqlms7c6DnSVCLtzyBr+YsPMDkwWyEzVADszZs+v0HTL3Oftw++Admlg==
   dependencies:
     "@babel/helper-plugin-utils" "^7.0.0"
 
