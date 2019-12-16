@@ -25,6 +25,10 @@
             }
         },
         methods: {
+            onProgramLoaded(gl) {
+                console.warn(gl);
+                // this.$emit('onProgramLoaded', gl);
+            },
             main() {
                 const { vSource, fSource } = this;
                 const gl = this.$refs.canvas.getContext('webgl');
@@ -34,6 +38,7 @@
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 // Clear <canvas>
                 gl.clear(gl.COLOR_BUFFER_BIT);
+                this.$emit('onProgramLoaded', gl);
             }
         },
         mounted() {
