@@ -17,6 +17,10 @@ const routes = [
     {
         path: '/multiPoints',
         component: () => import('@/views/multiPoints/index')
+    },
+    {
+        path: '/textured',
+        component: () => import('@/views/textured/index')
     }
 ];
 
