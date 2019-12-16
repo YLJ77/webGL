@@ -7,8 +7,8 @@
 <script>
     import loadShader from '@/mixins/loadShader'
     import { initVertexBuffers } from "@/util/appFunc";
-    import pointVS from '@/views/point/shaders/point.vert'
-    import pointFS from '@/views/point/shaders/point.frag'
+    import pointVS from '@/views/multiPoints/shaders/point.vert'
+    import pointFS from '@/views/multiPoints/shaders/point.frag'
     import { mat4, vec3 } from 'gl-matrix'
 
     export default {
@@ -31,8 +31,8 @@
                 const radian = Math.PI * ANGLE / 180.0; // Convert to radians
                 // Create Matrix4 object for a rotation matrix
                 const xformMatrix = mat4.create();
-                mat4.rotateZ(xformMatrix, xformMatrix, radian);
-                mat4.translate(xformMatrix, xformMatrix, vec3.set(vec3.create(),0.5,0.5,0))
+                mat4.fromZRotation(xformMatrix, radian);
+                mat4.translate(xformMatrix, xformMatrix, vec3.set(vec3.create(),0.5,0,0));
                 // Pass the rotation matrix to the vertex shader
                 gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix );
 
