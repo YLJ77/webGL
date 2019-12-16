@@ -39,12 +39,11 @@
             },
             main(gl) {
                 const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-                const u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+                const u_Width = gl.getUniformLocation(gl.program, 'u_Width');
+                const u_Height = gl.getUniformLocation(gl.program, 'u_Height');
                 const u_modelMatrix = gl.getUniformLocation(gl.program, 'u_modelMatrix');
                 // Create Matrix4 object for a rotation matrix
                 const modelMatrix = mat4.create();
-/*                mat4.fromZRotation(modelMatrix, radian);
-                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(),0.5,0,0));*/
                 initVertexBuffers({
                    gl,
                    vertices: new Float32Array([0.0, 0.5,   -0.5, -0.5,   0.5, -0.5]),
@@ -65,13 +64,14 @@
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 // Pass the rotation matrix to the vertex shader
                 gl.uniformMatrix4fv(u_modelMatrix, false, modelMatrix);
-                gl.uniform4fv(u_FragColor, new Float32Array([1.0,0,1,1]));
+                gl.uniform1f(u_Width, gl.canvas.width);
+                gl.uniform1f(u_Height, gl.canvas.height);
                 gl.vertexAttrib1f(a_PointSize, 10);
-                const tick = () => {
+                const animate = () => {
                     this.draw({ gl, n: 3, modelMatrix, u_modelMatrix });
-                    requestAnimationFrame(tick);// Request that the browser calls tick
+                    requestAnimationFrame(animate);// Request that the browser calls animate
                 };
-                tick();
+                animate();
             }
         }
     }

@@ -19,11 +19,10 @@
         },
         methods: {
             drawThreePoints(gl) {
-                const u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
                 const vertices = new Float32Array([
-                    0.0,0.5,10,
-                    -0.5,-0.5,20,
-                    0.5,-0.5,30
+                    0.0, 0.5,/*coordinate*/ 1.0, 0.0, 0.0,/*color*/ 10,/*size*/
+                    -0.5, -0.5, 0.0, 1.0, 0.0, 20,
+                    0.5, -0.5, 0.0, 0.0, 1.0, 30
                 ]);
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
                 initVertexBuffers({
@@ -34,27 +33,32 @@
                         {
                             attrVar: 'a_Position',
                             size: 2,
-                            stride: FSIZE * 3,
+                            stride: FSIZE * 6,
                             offset: 0
                         },
                         {
                             attrVar: 'a_PointSize',
                             size: 1,
-                            stride: FSIZE * 3,
+                            stride: FSIZE * 6,
+                            offset: FSIZE * 5
+                        },
+                        {
+                            attrVar: 'a_Color',
+                            size: 3,
+                            stride: FSIZE * 6,
                             offset: FSIZE * 2
                         }
                     ]
                 });
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.uniform4fv(u_FragColor, new Float32Array([1.0, 0.8, 0, 1]));
                 gl.drawArrays(gl.POINTS, 0, 3);
             },
             drawPoint({ clientX, clientY }) {
                 const { points, $refs: { canvasWrap: { $refs: { canvas }, gl } } } = this;
                 const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
                 const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-                const u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+                const a_Color = gl.getAttribLocation(gl.program, 'a_Color');
                 const point = windowToWebGL({ x: clientX, y: clientY, canvas });
                 gl.disableVertexAttribArray('a_Position');
                 point.color = new Float32Array([Math.random(), Math.random(), Math.random(), 1.0]);
@@ -64,7 +68,7 @@
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 points.forEach(({ x, y, color }) => {
                     gl.vertexAttrib2f(a_Position, x, y);
-                    gl.uniform4fv(u_FragColor, color);
+                    gl.vertexAttrib4fv(a_Color, color);
                     gl.drawArrays(gl.POINTS, 0, 1);
                 });
             },
