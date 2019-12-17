@@ -19,14 +19,14 @@
             main(gl) {
                 const vertices = new Float32Array([
                     // Vertex coordinates, texture coordinate
-/*                    -0.5,  0.5,   0.0, 1.0,
+                    -0.5,  0.5,   0.0, 1.0,
                     -0.5, -0.5,   0.0, 0.0,
                     0.5,  0.5,   1.0, 1.0,
-                    0.5, -0.5,   1.0, 0.0,*/
-                    -0.5, 0.5, -0.3, 1.7,
+                    0.5, -0.5,   1.0, 0.0,
+/*                    -0.5, 0.5, -0.3, 1.7,
                     -0.5, -0.5, -0.3, -0.2,
                     0.5, 0.5, 1.7, 1.7,
-                    0.5, -0.5, 1.7, -0.2
+                    0.5, -0.5, 1.7, -0.2*/
                 ]);
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
                 initVertexBuffers({
@@ -51,9 +51,19 @@
                 initTextures({
                     gl,
                     program: gl.program,
-                    uniformVar: 'u_Sampler',
-                    imgSrc: './favicon.ico',
-                    count: 4
+                    uniformVar: 'u_Sampler0',
+                    imgSrc: './timg.jpg',
+                    count: 4,
+                    canDraw: false
+                });
+                initTextures({
+                    gl,
+                    program: gl.program,
+                    uniformVar: 'u_Sampler1',
+                    imgSrc: './circle.gif',
+                    count: 4,
+                    textUnit: 1,
+                    canDraw: true
                 });
             }
         },

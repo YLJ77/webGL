@@ -31,7 +31,7 @@
             },
             main() {
                 const { vSource, fSource } = this;
-                const gl = this.$refs.canvas.getContext('webgl');
+                const gl = this.$refs.canvas.getContext('webgl2');
                 initShader({ gl, vSource, fSource });
                 this.gl = gl;
                 // Specify the color for clearing <canvas>
