@@ -21,6 +21,10 @@ const routes = [
     {
         path: '/textured',
         component: () => import('@/views/textured/index')
+    },
+    {
+        path: '/lookAtTriangles',
+        component: () => import('@/views/lookAtTriangles/index')
     }
 ];
 
