@@ -1,5 +1,40 @@
 <template>
     <div>
+        <ul>
+            <li>
+                <a-button-group>
+                    <a-button @click="draw({ vec: 'eyeVec3', actionType: 'add', axis: 'x' })">eyeX +</a-button>
+                    <a-button @click="draw({ vec: 'eyeVec3', actionType: 'subtract', axis: 'x' })">eyeX -</a-button>
+                    <a-button @click="draw({ vec: 'eyeVec3', actionType: 'add', axis: 'y' })">eyeY +</a-button>
+                    <a-button @click="draw({ vec: 'eyeVec3', actionType: 'subtract', axis: 'y' })">eyeY -</a-button>
+                    <a-button @click="draw({ vec: 'eyeVec3', actionType: 'add', axis: 'z' })">eyeZ +</a-button>
+                    <a-button @click="draw({ vec: 'eyeVec3', actionType: 'subtract', axis: 'z' })">eyeZ -</a-button>
+                </a-button-group>
+            </li>
+            <li>
+                <a-button-group>
+                    <a-button @click="draw({ vec: 'atVec3', actionType: 'add', axis: 'x' })">atX +</a-button>
+                    <a-button @click="draw({ vec: 'atVec3', actionType: 'subtract', axis: 'x' })">atX -</a-button>
+                    <a-button @click="draw({ vec: 'atVec3', actionType: 'add', axis: 'y' })">atY +</a-button>
+                    <a-button @click="draw({ vec: 'atVec3', actionType: 'subtract', axis: 'y' })">atY -</a-button>
+                    <a-button @click="draw({ vec: 'atVec3', actionType: 'add', axis: 'z' })">atZ +</a-button>
+                    <a-button @click="draw({ vec: 'atVec3', actionType: 'subtract', axis: 'z' })">atZ -</a-button>
+                </a-button-group>
+            </li>
+            <li>
+                <a-button-group>
+                    <a-button @click="draw({ vec: 'upVec3', actionType: 'add', axis: 'x' })">upX +</a-button>
+                    <a-button @click="draw({ vec: 'upVec3', actionType: 'subtract', axis: 'x' })">upX -</a-button>
+                    <a-button @click="draw({ vec: 'upVec3', actionType: 'add', axis: 'y' })">upY +</a-button>
+                    <a-button @click="draw({ vec: 'upVec3', actionType: 'subtract', axis: 'y' })">upY -</a-button>
+                    <a-button @click="draw({ vec: 'upVec3', actionType: 'add', axis: 'z' })">upZ +</a-button>
+                    <a-button @click="draw({ vec: 'upVec3', actionType: 'subtract', axis: 'z' })">upZ -</a-button>
+                </a-button-group>
+            </li>
+            <li>
+                <a-button @click="draw({ actionType: 'reset' })" type="primary">重置</a-button>
+            </li>
+        </ul>
         <canvas-wrap @onProgramLoaded="main" ref="canvasWrap" :v-source="VS" :f-source="FS"></canvas-wrap>
     </div>
 </template>
@@ -12,21 +47,70 @@
 
     export default {
         data() {
+            const eyeVec3 = vec3.set(vec3.create(), 0.20, 0.25, 0.25);
+            const atVec3 = vec3.set(vec3.create(), 0, 0, 0);
+            const upVec3 = vec3.set(vec3.create(), 0, 1, 0);
+            const initEyeVec3 = vec3.clone(eyeVec3);
+            const initAtVec3 = vec3.clone(atVec3);
+            const initUpVec3 = vec3.clone(upVec3);
             return {
                 VS,
                 FS,
+                webglInfo: null,
+                curLookAtVec: {
+                    vec: 'eyeVec3',
+                    axis: 'x'
+                },
+                eyeVec3,
+                atVec3,
+                upVec3,
+                initUpVec3,
+                initAtVec3,
+                initEyeVec3
             }
         },
         components: {
             canvasWrap: () => import('@/components/canvasWrap')
         },
+        mounted() {
+            document.addEventListener('keydown', e => {
+                e.preventDefault();
+               const { keyCode } = e;
+               const { curLookAtVec: { vec, axis } } = this;
+               if (keyCode === 38) { // up
+                   this.draw({ vec, axis, actionType: 'add' });
+               } else if (keyCode === 40) {  // down
+                   this.draw({ vec, axis, actionType: 'subtract' });
+               }
+            });
+        },
         methods: {
+            draw({ vec, actionType, axis }) {
+                const { eyeVec3, atVec3, upVec3, initUpVec3, initAtVec3, initEyeVec3, webglInfo: { gl, modelMatrix, u_ModelViewMatrix } } = this;
+                let viewMatrix;
+                if (actionType === 'reset') {
+                    viewMatrix = mat4.lookAt(mat4.create(), initEyeVec3, initAtVec3, initUpVec3);
+                } else {
+                    const operandVec = vec3.set(vec3.create(),
+                        axis === 'x' ? 0.01 : 0,
+                        axis === 'y' ? 0.01 : 0,
+                        axis === 'z' ? 0.01 : 0,
+                    );
+                    vec3[actionType](this[vec], this[vec], operandVec);
+                    viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
+                }
+                const modelViewMatrix = mat4.multiply(mat4.create(), viewMatrix, modelMatrix);
+                this.curLookAtVec = { vec, axis };
+                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLES, 0, 9);
+            },
             main(gl) {
-                const u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
-                const eyeVec3 = vec3.set(vec3.create(), 0.20, 0.25, 0.25);
-                const atVec3 = vec3.set(vec3.create(), 0, 0, 0);
-                const upVec3 = vec3.set(vec3.create(), 0, 1, 0);
+                const { eyeVec3, atVec3, upVec3 } = this;
+                const u_ModelViewMatrix = gl.getUniformLocation(gl.program, 'u_ModelViewMatrix');
                 const viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
+                const modelMatrix = mat4.fromZRotation(mat4.create(), Math.PI/180 * 10);
+                const modelViewMatrix = mat4.multiply(mat4.create(), viewMatrix, modelMatrix);
                 const vertices = new Float32Array([
                     0.0, 0.5, -0.4, 0.4, 1.0, 0.4, // The back green triangle
                     -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
@@ -60,8 +144,13 @@
                         },
                     ]
                 });
-                gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix);
+                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
                 gl.drawArrays(gl.TRIANGLES, 0, 9);
+                this.webglInfo = {
+                    gl,
+                    u_ModelViewMatrix,
+                    modelMatrix
+                };
             }
         }
     }
