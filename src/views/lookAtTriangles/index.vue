@@ -1,6 +1,15 @@
 <template>
     <div>
+        <p>{{ `near: ${near}, far: ${far}` }}</p>
         <ul>
+            <li>
+                <a-button-group>
+                    <a-button @click="draw({ actionType: 'add', axis: 'near' })">near +</a-button>
+                    <a-button @click="draw({ actionType: 'subtract', axis: 'near' })">near -</a-button>
+                    <a-button @click="draw({ actionType: 'add', axis: 'far' })">far +</a-button>
+                    <a-button @click="draw({ actionType: 'subtract', axis: 'far' })">far -</a-button>
+                </a-button-group>
+            </li>
             <li>
                 <a-button-group>
                     <a-button @click="draw({ vec: 'eyeVec3', actionType: 'add', axis: 'x' })">eyeX +</a-button>
@@ -66,7 +75,9 @@
                 upVec3,
                 initUpVec3,
                 initAtVec3,
-                initEyeVec3
+                initEyeVec3,
+                near: 0,
+                far: 2
             }
         },
         components: {
@@ -77,11 +88,11 @@
                 e.preventDefault();
                const { keyCode } = e;
                const { curLookAtVec: { vec, axis } } = this;
-               if (keyCode === 38) { // up
-                   this.draw({ vec, axis, actionType: 'add' });
-               } else if (keyCode === 40) {  // down
-                   this.draw({ vec, axis, actionType: 'subtract' });
-               }
+                if (keyCode === 38) { // up
+                    this.draw({ vec, axis, actionType: 'add' });
+                } else if (keyCode === 40) {  // down
+                    this.draw({ vec, axis, actionType: 'subtract' });
+                }
             });
         },
         methods: {
@@ -90,16 +101,30 @@
                 let viewMatrix;
                 if (actionType === 'reset') {
                     viewMatrix = mat4.lookAt(mat4.create(), initEyeVec3, initAtVec3, initUpVec3);
+                    this.eyeVec3 = vec3.clone(initEyeVec3);
+                    this.atVec3 = vec3.clone(initAtVec3);
+                    this.upVec3 = vec3.clone(initUpVec3);
+                    this.near = 0;
+                    this.far = 0.5;
                 } else {
-                    const operandVec = vec3.set(vec3.create(),
-                        axis === 'x' ? 0.01 : 0,
-                        axis === 'y' ? 0.01 : 0,
-                        axis === 'z' ? 0.01 : 0,
-                    );
-                    vec3[actionType](this[vec], this[vec], operandVec);
+                    if (['x', 'y', 'z'].includes(axis)) {
+                        const operandVec = vec3.set(vec3.create(),
+                            axis === 'x' ? 0.01 : 0,
+                            axis === 'y' ? 0.01 : 0,
+                            axis === 'z' ? 0.01 : 0,
+                        );
+                        vec3[actionType](this[vec], this[vec], operandVec);
+                    } else if (['near', 'far'].includes(axis)) {
+                        const actionTypeMapSign = {
+                            add: 1,
+                            subtract: -1,
+                        };
+                        this[axis] += 0.01 * actionTypeMapSign[actionType];
+                    }
                     viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
                 }
-                const modelViewMatrix = mat4.multiply(mat4.create(), viewMatrix, modelMatrix);
+                const orthoMatrix = mat4.ortho(mat4.create(), -1, 1, -1, 1, this.near, this.far);
+                const modelViewMatrix = mat4.multiply(mat4.create(), orthoMatrix, mat4.multiply(mat4.create(),viewMatrix, modelMatrix));
                 this.curLookAtVec = { vec, axis };
                 gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
                 gl.clear(gl.COLOR_BUFFER_BIT);
@@ -109,20 +134,22 @@
                 const { eyeVec3, atVec3, upVec3 } = this;
                 const u_ModelViewMatrix = gl.getUniformLocation(gl.program, 'u_ModelViewMatrix');
                 const viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
+                const orthoMatrix = mat4.ortho(mat4.create(), -1, 1, -1, 1, this.near, this.far);
                 const modelMatrix = mat4.fromZRotation(mat4.create(), Math.PI/180 * 10);
-                const modelViewMatrix = mat4.multiply(mat4.create(), viewMatrix, modelMatrix);
+                const modelViewMatrix = mat4.multiply(mat4.create(), orthoMatrix, mat4.multiply(mat4.create(),viewMatrix, modelMatrix));
                 const vertices = new Float32Array([
-                    0.0, 0.5, -0.4, 0.4, 1.0, 0.4, // The back green triangle
-                    -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
-                    0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
+                    // Vertex coordinates and color
+                    0.0,  0.5,  -0.4,  0.4,  1.0,  0.4, // The back green one
+                    -0.5, -0.5,  -0.4,  0.4,  1.0,  0.4,
+                    0.5, -0.5,  -0.4,  1.0,  0.4,  0.4,
 
-                    0.5, 0.4, -0.2, 1.0, 0.4, 0.4, // The middle yellow triangle
-                    -0.5, 0.4, -0.2, 1.0, 1.0, 0.4,
-                    0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
+                    0.5,  0.4,  -0.2,  1.0,  0.4,  0.4, // The middle yellow one
+                    -0.5,  0.4,  -0.2,  1.0,  1.0,  0.4,
+                    0.0, -0.6,  -0.2,  1.0,  1.0,  0.4,
 
-                    0.0, 0.5, 0.0, 0.4, 0.4, 1.0, // The front blue triangle
-                    -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
-                    0.5, -0.5, 0.0, 1.0, 0.4, 0.4
+                    0.0,  0.5,   0.0,  0.4,  0.4,  1.0,  // The front blue one
+                    -0.5, -0.5,   0.0,  0.4,  0.4,  1.0,
+                    0.5, -0.5,   0.0,  1.0,  0.4,  0.4,
                 ]);
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
                 initVertexBuffers({
