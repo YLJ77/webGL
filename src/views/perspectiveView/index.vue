@@ -56,8 +56,8 @@
 
     export default {
         data() {
-            const eyeVec3 = vec3.set(vec3.create(), 0.20, 0.25, 0.25);
-            const atVec3 = vec3.set(vec3.create(), 0, 0, 0);
+            const eyeVec3 = vec3.set(vec3.create(), 0, 0, 5);
+            const atVec3 = vec3.set(vec3.create(), 0, 0, -100);
             const upVec3 = vec3.set(vec3.create(), 0, 1, 0);
             const initEyeVec3 = vec3.clone(eyeVec3);
             const initAtVec3 = vec3.clone(atVec3);
@@ -76,8 +76,8 @@
                 initUpVec3,
                 initAtVec3,
                 initEyeVec3,
-                near: 0,
-                far: 2
+                near: 1,
+                far: 100
             }
         },
         components: {
@@ -97,15 +97,14 @@
         },
         methods: {
             draw({ vec, actionType, axis }) {
-                const { eyeVec3, atVec3, upVec3, initUpVec3, initAtVec3, initEyeVec3, webglInfo: { gl, modelMatrix, u_ModelViewMatrix } } = this;
-                let viewMatrix;
+                const { initUpVec3, initAtVec3, initEyeVec3, webglInfo: { gl, modelMatrix } } = this;
+                const { canvas } = gl;
                 if (actionType === 'reset') {
-                    viewMatrix = mat4.lookAt(mat4.create(), initEyeVec3, initAtVec3, initUpVec3);
                     this.eyeVec3 = vec3.clone(initEyeVec3);
                     this.atVec3 = vec3.clone(initAtVec3);
                     this.upVec3 = vec3.clone(initUpVec3);
-                    this.near = 0;
-                    this.far = 2;
+                    this.near = 1;
+                    this.far = 100;
                 } else {
                     if (['x', 'y', 'z'].includes(axis)) {
                         const operandVec = vec3.set(vec3.create(),
@@ -119,37 +118,26 @@
                             add: 1,
                             subtract: -1,
                         };
-                        this[axis] += 0.01 * actionTypeMapSign[actionType];
+                        this[axis] += 1 * actionTypeMapSign[actionType];
                     }
-                    viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
                 }
-                const orthoMatrix = mat4.ortho(mat4.create(), -1, 1, -1, 1, this.near, this.far);
-                const modelViewMatrix = mat4.multiply(mat4.create(), orthoMatrix, mat4.multiply(mat4.create(),viewMatrix, modelMatrix));
+                this.drawShape({ modelMatrix, gl });
                 this.curLookAtVec = { vec, axis };
-                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.drawArrays(gl.TRIANGLES, 0, 9);
             },
             main(gl) {
-                const { eyeVec3, atVec3, upVec3 } = this;
-                const u_ModelViewMatrix = gl.getUniformLocation(gl.program, 'u_ModelViewMatrix');
-                const viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
-                const orthoMatrix = mat4.ortho(mat4.create(), -1, 1, -1, 1, this.near, this.far);
-                const modelMatrix = mat4.fromZRotation(mat4.create(), Math.PI/180 * 10);
-                const modelViewMatrix = mat4.multiply(mat4.create(), orthoMatrix, mat4.multiply(mat4.create(),viewMatrix, modelMatrix));
                 const vertices = new Float32Array([
                     // Vertex coordinates and color
-                    0.0,  0.5,  -0.4,  0.4,  1.0,  0.4, // The back green one
-                    -0.5, -0.5,  -0.4,  0.4,  1.0,  0.4,
-                    0.5, -0.5,  -0.4,  1.0,  0.4,  0.4,
+                    0.0, 1.0, -4.0, 0.4, 1.0, 0.4, // The back green triangle
+                    -0.5, -1.0, -4.0, 0.4, 1.0, 0.4,
+                    0.5, -1.0, -4.0, 1.0, 0.4, 0.4,
 
-                    0.5,  0.4,  -0.2,  1.0,  0.4,  0.4, // The middle yellow one
-                    -0.5,  0.4,  -0.2,  1.0,  1.0,  0.4,
-                    0.0, -0.6,  -0.2,  1.0,  1.0,  0.4,
+                    0.0, 1.0, -2.0, 1.0, 1.0, 0.4, // The middle yellow triangle
+                    -0.5, -1.0, -2.0, 1.0, 1.0, 0.4,
+                    0.5, -1.0, -2.0, 1.0, 0.4, 0.4,
 
-                    0.0,  0.5,   0.0,  0.4,  0.4,  1.0,  // The front blue one
-                    -0.5, -0.5,   0.0,  0.4,  0.4,  1.0,
-                    0.5, -0.5,   0.0,  1.0,  0.4,  0.4,
+                    0.0, 1.0, 0.0, 0.4, 0.4, 1.0, // The front blue triangle
+                    -0.5, -1.0, 0.0, 0.4, 0.4, 1.0,
+                    0.5, -1.0, 0.0, 1.0, 0.4, 0.4,
                 ]);
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
                 initVertexBuffers({
@@ -171,13 +159,28 @@
                         },
                     ]
                 });
-                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
-                gl.drawArrays(gl.TRIANGLES, 0, 9);
+                const rotateMatrix = mat4.fromZRotation(mat4.create(), Math.PI/180 * 10);
+                this.drawShape({ modelMatrix: rotateMatrix, gl });
                 this.webglInfo = {
                     gl,
-                    u_ModelViewMatrix,
-                    modelMatrix
+                    modelMatrix: rotateMatrix
                 };
+            },
+            drawShape({ modelMatrix, gl }) {
+                const { eyeVec3, atVec3, upVec3 } = this;
+                const { canvas } = gl;
+                const u_ModelViewMatrix = gl.getUniformLocation(gl.program, 'u_ModelViewMatrix');
+                const viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
+                const perspectiveMatrix = mat4.perspective(mat4.create(), Math.PI/180 * 30, canvas.width/canvas.height, this.near, this.far);
+                let translateMatrix = mat4.translate(mat4.clone(modelMatrix), modelMatrix, vec3.set(vec3.create(), -0.75, 0, 0));
+                let modelViewMatrix = mat4.multiply(mat4.create(), perspectiveMatrix, mat4.multiply(mat4.create(),viewMatrix, translateMatrix));
+                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLES, 0, 9);
+                translateMatrix = mat4.translate(mat4.clone(modelMatrix), modelMatrix, vec3.set(vec3.create(), 0.75, 0, 0));
+                modelViewMatrix = mat4.multiply(mat4.create(), perspectiveMatrix, mat4.multiply(mat4.create(),viewMatrix, translateMatrix));
+                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
+                gl.drawArrays(gl.TRIANGLES, 0, 9);
             }
         }
     }

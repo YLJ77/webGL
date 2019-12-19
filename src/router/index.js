@@ -25,6 +25,10 @@ const routes = [
     {
         path: '/lookAtTriangles',
         component: () => import('@/views/lookAtTriangles/index')
+    },
+    {
+        path: '/perspectiveView',
+        component: () => import('@/views/perspectiveView/index')
     }
 ];
 
