@@ -29,6 +29,10 @@ const routes = [
     {
         path: '/perspectiveView',
         component: () => import('@/views/perspectiveView/index')
+    },
+    {
+        path: '/cube',
+        component: () => import('@/views/cube/index')
     }
 ];
 

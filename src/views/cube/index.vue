@@ -56,8 +56,8 @@
 
     export default {
         data() {
-            const eyeVec3 = vec3.set(vec3.create(), 0, 0, 5);
-            const atVec3 = vec3.set(vec3.create(), 0, 0, -100);
+            const eyeVec3 = vec3.set(vec3.create(), 3, 3, 7);
+            const atVec3 = vec3.set(vec3.create(), 0, 0, 0);
             const upVec3 = vec3.set(vec3.create(), 0, 1, 0);
             const initEyeVec3 = vec3.clone(eyeVec3);
             const initAtVec3 = vec3.clone(atVec3);
@@ -127,18 +127,31 @@
             main(gl) {
                 const vertices = new Float32Array([
                     // Vertex coordinates and color
-                    0.0, 1.0, 0.0, 0.4, 0.4, 1.0, // The front blue triangle
-                    -0.5, -1.0, 0.0, 0.4, 0.4, 1.0,
-                    0.5, -1.0, 0.0, 1.0, 0.4, 0.4,
-
-                    0.0, 1.0, -4.0, 0.4, 1.0, 0.4, // The back green triangle
-                    -0.5, -1.0, -4.0, 0.4, 1.0, 0.4,
-                    0.5, -1.0, -4.0, 1.0, 0.4, 0.4,
-
-                    0.0, 1.0, -2.0, 1.0, 1.0, 0.4, // The middle yellow triangle
-                    -0.5, -1.0, -2.0, 1.0, 1.0, 0.4,
-                    0.5, -1.0, -2.0, 1.0, 0.4, 0.4,
-
+                    1.0,  1.0,  1.0,     1.0,  1.0,  1.0,  // v0 White
+                    -1.0,  1.0,  1.0,     1.0,  0.0,  1.0,  // v1 Magenta
+                    -1.0, -1.0,  1.0,     1.0,  0.0,  0.0,  // v2 Red
+                    1.0, -1.0,  1.0,     1.0,  1.0,  0.0,  // v3 Yellow
+                    1.0, -1.0, -1.0,     0.0,  1.0,  0.0,  // v4 Green
+                    1.0,  1.0, -1.0,     0.0,  1.0,  1.0,  // v5 Cyan
+                    -1.0,  1.0, -1.0,     0.0,  0.0,  1.0,  // v6 Blue
+                    -1.0, -1.0, -1.0,     0.0,  0.0,  0.0   // v7 Black
+                ]);
+                // Create a cube
+                //    v6----- v5
+                //   /|      /|
+                //  v1------v0|
+                //  | |     | |
+                //  | |v7---|-|v4
+                //  |/      |/
+                //  v2------v3
+                // Indices of the vertices
+                const indices = new Uint8Array([  //  If there are more than 256 indices, use Uint16Array instead
+                    0, 1, 2,   0, 2, 3,    // front
+                    0, 3, 4,   0, 4, 5,    // right
+                    0, 5, 6,   0, 6, 1,    // up
+                    1, 6, 7,   1, 7, 2,    // left
+                    7, 4, 3,   7, 3, 2,    // down
+                    4, 7, 6,   4, 6, 5     // back
                 ]);
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
                 initVertexBuffers({
@@ -158,7 +171,8 @@
                             stride: FSIZE * 6,
                             offset: FSIZE * 3
                         },
-                    ]
+                    ],
+                    indices
                 });
                 const rotateMatrix = mat4.fromZRotation(mat4.create(), Math.PI/180 * 10);
                 this.drawShape({ modelMatrix: rotateMatrix, gl });
@@ -178,11 +192,7 @@
                 gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
                 gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-                gl.drawArrays(gl.TRIANGLES, 0, 9);
-                translateMatrix = mat4.translate(mat4.clone(modelMatrix), modelMatrix, vec3.set(vec3.create(), 0.75, 0, 0));
-                modelViewMatrix = mat4.multiply(mat4.create(), perspectiveMatrix, mat4.multiply(mat4.create(),viewMatrix, translateMatrix));
-                gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
-                gl.drawArrays(gl.TRIANGLES, 0, 9);
+                gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
             }
         }
     }

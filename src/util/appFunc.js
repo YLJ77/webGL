@@ -1,3 +1,5 @@
+export const compose = (...fns) => x => fns.reduceRight((y, f) => f(y), x);
+
 export function loadShader({ gl, type, source }) {
     let shader = gl.createShader(gl[type]);
     // Set the shader program

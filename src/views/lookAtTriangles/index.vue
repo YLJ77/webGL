@@ -49,7 +49,7 @@
 </template>
 
 <script>
-    import { initVertexBuffers } from "@/util/appFunc";
+    import { initVertexBuffers, compose } from "@/util/appFunc";
     import VS from '@/views/lookAtTriangles/shaders/triangle.vert'
     import FS from '@/views/lookAtTriangles/shaders/triangle.frag'
     import { mat4, vec3 } from 'gl-matrix'
@@ -124,7 +124,12 @@
                     viewMatrix = mat4.lookAt(mat4.create(), eyeVec3, atVec3, upVec3);
                 }
                 const orthoMatrix = mat4.ortho(mat4.create(), -1, 1, -1, 1, this.near, this.far);
-                const modelViewMatrix = mat4.multiply(mat4.create(), orthoMatrix, mat4.multiply(mat4.create(),viewMatrix, modelMatrix));
+                // const modelViewMatrix = mat4.multiply(mat4.create(), orthoMatrix, mat4.multiply(mat4.create(),viewMatrix, modelMatrix));
+                const modelViewMatrix = compose(
+                    matrix => mat4.multiply(mat4.create(), orthoMatrix, matrix),
+                    matrix => mat4.multiply(matrix, viewMatrix, modelMatrix),
+                    () => mat4.create()
+                )();
                 this.curLookAtVec = { vec, axis };
                 gl.uniformMatrix4fv(u_ModelViewMatrix, false, modelViewMatrix);
                 gl.clear(gl.COLOR_BUFFER_BIT);
