@@ -50,8 +50,8 @@
 
 <script>
     import { initVertexBuffers, compose } from "@/util/appFunc";
-    import VS from '@/views/cube/shaders/cube.vert'
-    import FS from '@/views/cube/shaders/cube.frag'
+    import VS from '@/views/cube_per_fragment/shaders/cube.vert'
+    import FS from '@/views/cube_per_fragment/shaders/cube.frag'
     import { mat4, vec3 } from 'gl-matrix'
 
     export default {
