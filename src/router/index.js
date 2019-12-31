@@ -37,6 +37,10 @@ const routes = [
     {
         path: '/cube_per_fragment',
         component: () => import('@/views/cube_per_fragment/index')
+    },
+    {
+        path: '/arm',
+        component: () => import('@/views/arm/index')
     }
 ];
 
