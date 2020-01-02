@@ -9,6 +9,7 @@
     import VS from '@/views/arm/shaders/arm.vert'
     import FS from '@/views/arm/shaders/arm.frag'
     import { mat4, vec3 } from 'gl-matrix'
+    import MatrixCtx from './MatrixCtx'
 
     export default {
         data() {
@@ -19,6 +20,7 @@
             const initAtVec3 = vec3.clone(atVec3);
             const initUpVec3 = vec3.clone(upVec3);
             return {
+                matrixCtx: new MatrixCtx(),
                 angle: {
                     step: 3.0,
                     arm1: 90,
@@ -44,7 +46,7 @@
                 initAtVec3,
                 initEyeVec3,
                 near: 1,
-                far: 100
+                far: 300
             }
         },
         components: {
@@ -83,7 +85,7 @@
                         break;
                     default: return; // Skip drawing at no effective action
                 }
-                this.drawShape(webglInfo);
+                this.draw(webglInfo);
             });
         },
         methods: {
@@ -109,12 +111,12 @@
                 //  |/      |/
                 //  v2------v3
                 const vertices = new Float32Array([   // Coordinates
-                    1.5, 10.0, 1.5, -1.5, 10.0, 1.5, -1.5,  0.0, 1.5,  1.5,  0.0, 1.5, // v0-v1-v2-v3 front
-                    1.5, 10.0, 1.5,  1.5,  0.0, 1.5,  1.5,  0.0,-1.5,  1.5, 10.0,-1.5, // v0-v3-v4-v5 right
-                    1.5, 10.0, 1.5,  1.5, 10.0,-1.5, -1.5, 10.0,-1.5, -1.5, 10.0, 1.5, // v0-v5-v6-v1 up
-                    -1.5, 10.0, 1.5, -1.5, 10.0,-1.5, -1.5,  0.0,-1.5, -1.5,  0.0, 1.5, // v1-v6-v7-v2 left
-                    -1.5,  0.0,-1.5,  1.5,  0.0,-1.5,  1.5,  0.0, 1.5, -1.5,  0.0, 1.5, // v7-v4-v3-v2 down
-                    1.5,  0.0,-1.5, -1.5,  0.0,-1.5, -1.5, 10.0,-1.5,  1.5, 10.0,-1.5  // v4-v7-v6-v5 back
+                    0.5, 1.0, 0.5, -0.5, 1.0, 0.5, -0.5, 0.0, 0.5,  0.5, 0.0, 0.5, // v0-v1-v2-v3 front
+                    0.5, 1.0, 0.5,  0.5, 0.0, 0.5,  0.5, 0.0,-0.5,  0.5, 1.0,-0.5, // v0-v3-v4-v5 right
+                    0.5, 1.0, 0.5,  0.5, 1.0,-0.5, -0.5, 1.0,-0.5, -0.5, 1.0, 0.5, // v0-v5-v6-v1 up
+                    -0.5, 1.0, 0.5, -0.5, 1.0,-0.5, -0.5, 0.0,-0.5, -0.5, 0.0, 0.5, // v1-v6-v7-v2 left
+                    -0.5, 0.0,-0.5,  0.5, 0.0,-0.5,  0.5, 0.0, 0.5, -0.5, 0.0, 0.5, // v7-v4-v3-v2 down
+                    0.5, 0.0,-0.5, -0.5, 0.0,-0.5, -0.5, 1.0,-0.5,  0.5, 1.0,-0.5  // v4-v7-v6-v5 back
                 ]);
                 const colors = new Float32Array([    // Colors
                     1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v1-v2-v3 front
@@ -176,37 +178,87 @@
                 // Set the clear color and enable the depth test
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.enable(gl.DEPTH_TEST);
-                this.drawShape({  gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix });
                 this.webglInfo = { gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix };
+                this.draw();
             },
-            drawShape({ gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix }) {
-                const { matrix: { model }, angle } = this;
+            draw() {
+                let { matrixCtx, matrix: { model: modelMatrix }, angle, webglInfo: { gl } } = this;
                 // Clear color and depth buffer
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+                // Draw a base
+                const baseHeight = 2.0;
+                mat4.fromTranslation(modelMatrix, vec3.set(vec3.create(), 0, -12, 0));
+                matrixCtx.save(modelMatrix);
+                mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 10, baseHeight, 10));
+                this.drawBox({ modelMatrix });
+                modelMatrix = matrixCtx.restore();
+
                 // Arm1
                 const arm1Length = 10.0; // Length of arm1
-                mat4.fromTranslation(model, vec3.set(vec3.create(), 0, -12, 0));
-                mat4.rotateY(model, model, Math.PI/180 * angle.arm1);
-                this.drawBox({ gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix });
+                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, baseHeight, 0.0));  // Move onto the base
+                mat4.rotateY(modelMatrix, modelMatrix, Math.PI/180 * angle.arm1);
+                matrixCtx.save(modelMatrix);
+                mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 3, arm1Length, 3));
+                this.drawBox({ modelMatrix });
+                modelMatrix = matrixCtx.restore();
 
-                mat4.translate(model, model, vec3.set(vec3.create(), 0, arm1Length, 0));  // Move to joint1
-                mat4.rotateZ(model, model, Math.PI/180 * angle.joint1);
-                mat4.scale(model, model, vec3.set(vec3.create(), 1.3, 1.0, 1.3));
-                this.drawBox({ gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix });
+                // Arm2
+                const arm2Length = 10.0;
+                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, arm1Length, 0.0));
+                mat4.rotateZ(modelMatrix, modelMatrix, Math.PI/180 * angle.joint1);
+                matrixCtx.save(modelMatrix);
+                mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 4, arm2Length, 4));
+                this.drawBox({ modelMatrix });
+                modelMatrix = matrixCtx.restore();
 
+                // A palm
+                const palmLength = 2.0;
+                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, arm2Length, 0.0));
+                mat4.rotateY(modelMatrix, modelMatrix, Math.PI/180 * angle.joint2);
+                matrixCtx.save(modelMatrix);
+                mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 2, palmLength, 6));
+                this.drawBox({ modelMatrix });
+                modelMatrix = matrixCtx.restore();
+
+                // Move to the center of the tip of the palm
+                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, palmLength, 0.0));
+
+                // finger1
+                const fingerLength = 2;
+                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, 0, fingerLength));
+                mat4.rotateX(modelMatrix, modelMatrix, Math.PI/180 * angle.joint3);
+                matrixCtx.save(modelMatrix);
+                mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 1, fingerLength, 1));
+                this.drawBox({ modelMatrix });
+                modelMatrix = matrixCtx.restore();
+
+                // finger2
+                mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, 0, -fingerLength));
+                mat4.rotateX(modelMatrix, modelMatrix, -Math.PI/180 * angle.joint3);
+                matrixCtx.save(modelMatrix);
+                mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 1, fingerLength, 1));
+                this.drawBox({ modelMatrix });
+                modelMatrix = matrixCtx.restore();
             },
-            drawBox({ gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix }) {
-                const { matrix: { model }, angle } = this;
-                // Calculate the model view project matrix and pass it to u_MvpMatrix
+            drawBox({ modelMatrix }) {
+                const {
+                    webglInfo: {
+                         gl,
+                        viewProjMatrix,
+                        u_MvpMatrix,
+                        u_NormalMatrix
+                    }
+                } = this;
+                // Calculate the modelMatrix view project matrix and pass it to u_MvpMatrix
                 this.matrix.mvp = compose(
-                    matrix => mat4.multiply(matrix, viewProjMatrix, model ),
+                    matrix => mat4.multiply(matrix, viewProjMatrix, modelMatrix ),
                     () => mat4.create()
                 )();
                 gl.uniformMatrix4fv(u_MvpMatrix, false, this.matrix.mvp);
                 // Calculate the normal transformation matrix and pass it to u_NormalMatrix
                 const normalMatrix = mat4.create();
-                mat4.invert(normalMatrix, this.matrix.model);
+                mat4.invert(normalMatrix, modelMatrix);
                 mat4.transpose(normalMatrix, normalMatrix);
                 gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix);
                 gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
