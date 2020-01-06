@@ -1,11 +1,16 @@
 <template>
     <div>
-        <canvas-wrap @onProgramLoaded="main" ref="canvasWrap" :v-source="VS" :f-source="FS"></canvas-wrap>
+        <canvas-wrap @onProgramLoaded="main"
+                     @mousedown="down"
+                     @mouseup="up"
+                     @mousemove="move"
+                     :v-source="VS"
+                     :f-source="FS"></canvas-wrap>
     </div>
 </template>
 
 <script>
-    import { initVertexBuffers, compose } from "@/util/appFunc";
+    import { initVertexBuffers, compose, waitToLoad } from "@/util/appFunc";
     import VS from '@/views/arm/shaders/arm.vert'
     import FS from '@/views/arm/shaders/arm.frag'
     import { mat4, vec3 } from 'gl-matrix'
@@ -46,49 +51,92 @@
                 initAtVec3,
                 initEyeVec3,
                 near: 1,
-                far: 300
+                far: 300,
+                mouse: {
+                    dragging: false,
+                    lastX: -1,
+                    lastY: -1,
+                    deltaXAngle: 0,
+                    deltaYAngle: 0
+                }
             }
         },
         components: {
             canvasWrap: () => import('@/components/canvasWrap')
         },
         mounted() {
-            document.addEventListener('keydown', e => {
-                e.preventDefault();
-                const { keyCode } = e;
-                const { angle, webglInfo } = this;
-                const maxAngle = 135;
-                switch (keyCode) {
-                    case 38: // Up arrow key -> the positive rotation of joint1 around the z-axis
-                        if (angle.joint1 < maxAngle) angle.joint1 += angle.step;
-                        break;
-                    case 40: // Down arrow key -> the negative rotation of joint1 around the z-axis
-                        if (angle.joint1 > maxAngle * -1)angle.joint1 -= angle.step;
-                        break;
-                    case 39: // Right arrow key -> the positive rotation of arm1 around the y-axis
-                        angle.arm1 += angle.step;
-                        break;
-                    case 37: // Left arrow key -> the negative rotation of arm1 around the y-axis
-                        angle.arm1 -= angle.step;
-                        break;
-                    case 90: // Z key -> the positive rotation of joint2
-                        angle.joint2 += angle.step;
-                        break;
-                    case 88: // X key -> the negative rotation of joint2
-                        angle.joint2 -= angle.step;
-                        break;
-                    case 86: // V key -> the positive rotation of joint3
-                        if (angle.joint3 < 60.0) angle.joint3 += angle.step;
-                        break;
-                    case 67: // C key -> the negative rotation of joint3
-                        if (angle.joint3 > -60.0) angle.joint3 -= angle.step;
-                        break;
-                    default: return; // Skip drawing at no effective action
-                }
-                this.draw(webglInfo);
+            this.addKeyEvent();
+            waitToLoad(() => this.webglInfo).then(() => {
+                this.animate();
             });
         },
         methods: {
+            down(e) {
+                const { clientX: x, clientY: y, target } = e;
+                // Start dragging if a mouse is in canvas
+                const rect = target.getBoundingClientRect();
+                if (x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom) {
+                    this.mouse.lastX = x;
+                    this.mouse.lastY = y;
+                    this.mouse.dragging = true;
+                }
+            },
+            up() {
+                this.mouse.dragging = false; // Mouse is released
+            },
+            move(e) {
+                const { clientX: x, clientY: y } = e;
+                const { mouse: { dragging, lastX, lastY, clock }, webglInfo: { gl } } = this;
+                if (dragging) {
+                    const factor = 100/gl.canvas.height;
+                    const dx = factor * (x - lastX);
+                    const dy = factor * (y - lastY);
+                    this.mouse.deltaXAngle += dy;
+                    this.mouse.deltaYAngle += dx;
+                }
+                this.mouse.lastX = x;
+                this.mouse.lastY = y;
+            },
+            animate() {
+                this.draw();
+                requestAnimationFrame(this.animate);
+            },
+            addKeyEvent() {
+                document.addEventListener('keydown', e => {
+                    e.preventDefault();
+                    const { keyCode } = e;
+                    const { angle, webglInfo } = this;
+                    const maxAngle = 135;
+                    switch (keyCode) {
+                        case 38: // Up arrow key -> the positive rotation of joint1 around the z-axis
+                            if (angle.joint1 < maxAngle) angle.joint1 += angle.step;
+                            break;
+                        case 40: // Down arrow key -> the negative rotation of joint1 around the z-axis
+                            if (angle.joint1 > maxAngle * -1)angle.joint1 -= angle.step;
+                            break;
+                        case 39: // Right arrow key -> the positive rotation of arm1 around the y-axis
+                            angle.arm1 += angle.step;
+                            break;
+                        case 37: // Left arrow key -> the negative rotation of arm1 around the y-axis
+                            angle.arm1 -= angle.step;
+                            break;
+                        case 90: // Z key -> the positive rotation of joint2
+                            angle.joint2 += angle.step;
+                            break;
+                        case 88: // X key -> the negative rotation of joint2
+                            angle.joint2 -= angle.step;
+                            break;
+                        case 86: // V key -> the positive rotation of joint3
+                            if (angle.joint3 < 60.0) angle.joint3 += angle.step;
+                            break;
+                        case 67: // C key -> the negative rotation of joint3
+                            if (angle.joint3 > -60.0) angle.joint3 -= angle.step;
+                            break;
+                        default: return; // Skip drawing at no effective action
+                    }
+                    this.draw(webglInfo);
+                });
+            },
             main(gl) {
                 const u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
                 const u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
@@ -182,13 +230,24 @@
                 this.draw();
             },
             draw() {
-                let { matrixCtx, matrix: { model: modelMatrix }, angle, webglInfo: { gl } } = this;
+                let {
+                    matrixCtx,
+                    matrix: { model: modelMatrix },
+                    angle,
+                    webglInfo: { gl },
+                    mouse: {
+                        deltaXAngle,
+                        deltaYAngle
+                    }
+                } = this;
                 // Clear color and depth buffer
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
                 // Draw a base
                 const baseHeight = 2.0;
                 mat4.fromTranslation(modelMatrix, vec3.set(vec3.create(), 0, -12, 0));
+                mat4.rotateX(modelMatrix, modelMatrix, Math.PI/180 * deltaXAngle);  // Rotation around x-axis
+                mat4.rotateY(modelMatrix, modelMatrix, Math.PI/180 * deltaYAngle);  // Rotation around y-axis
                 matrixCtx.save(modelMatrix);
                 mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 10, baseHeight, 10));
                 this.drawBox({ modelMatrix });
