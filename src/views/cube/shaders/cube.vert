@@ -11,8 +11,6 @@ uniform vec3 u_LightColor;
 uniform vec3 u_LightDirection;
 uniform vec3 u_LightPosition;   // Position of the light source (in the world coordinate system)
 varying vec4 v_Color;
-varying vec3 v_Normal;
-varying vec3 v_Position;
 void main() {
     gl_Position = u_MvpMatrix * a_Position;
 //    vec3 normal = normalize(vec3(transpose(inverse(u_ModelMatrix)) * a_Normal));

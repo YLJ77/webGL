@@ -167,12 +167,12 @@
                     0.5, 0.0,-0.5, -0.5, 0.0,-0.5, -0.5, 1.0,-0.5,  0.5, 1.0,-0.5  // v4-v7-v6-v5 back
                 ]);
                 const colors = new Float32Array([    // Colors
-                    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v1-v2-v3 front
-                    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v3-v4-v5 right
-                    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v0-v5-v6-v1 up
-                    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v1-v6-v7-v2 left
-                    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0,     // v7-v4-v3-v2 down
-                    1, 0, 0,   1, 0, 0,   1, 0, 0,  1, 0, 0　    // v4-v7-v6-v5 back
+                    1, 0.4, 0,   1, 0.4, 0,   1, 0.4, 0,  1, 0.4, 0,     // v0-v1-v2-v3 front
+                    1, 0.4, 0,   1, 0.4, 0,   1, 0.4, 0,  1, 0.4, 0,     // v0-v3-v4-v5 right
+                    1, 0.4, 0,   1, 0.4, 0,   1, 0.4, 0,  1, 0.4, 0,     // v0-v5-v6-v1 up
+                    1, 0.4, 0,   1, 0.4, 0,   1, 0.4, 0,  1, 0.4, 0,     // v1-v6-v7-v2 left
+                    1, 0.4, 0,   1, 0.4, 0,   1, 0.4, 0,  1, 0.4, 0,     // v7-v4-v3-v2 down
+                    1, 0.4, 0,   1, 0.4, 0,   1, 0.4, 0,  1, 0.4, 0　    // v4-v7-v6-v5 back
                 ]);
                 const normals = new Float32Array([    // Normal
                     0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,   0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
@@ -210,11 +210,11 @@
                             vertice: vertices,
                             size: 3
                         },
-/*                        {
+                        {
                             attrVar: 'a_Color',
                             vertice: colors,
                             size: 3
-                        },*/
+                        },
                         {
                             attrVar: 'a_Normal',
                             vertice: normals,
@@ -226,7 +226,13 @@
                 // Set the clear color and enable the depth test
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.enable(gl.DEPTH_TEST);
-                this.webglInfo = { gl, viewProjMatrix, u_MvpMatrix, u_NormalMatrix };
+                this.webglInfo = {
+                    gl,
+                    viewProjMatrix,
+                    u_MvpMatrix,
+                    u_NormalMatrix,
+                    u_ModalMatrix
+                };
                 this.draw();
             },
             draw() {
@@ -306,7 +312,8 @@
                          gl,
                         viewProjMatrix,
                         u_MvpMatrix,
-                        u_NormalMatrix
+                        u_NormalMatrix,
+                        u_ModalMatrix
                     }
                 } = this;
                 // Calculate the modelMatrix view project matrix and pass it to u_MvpMatrix
@@ -320,6 +327,7 @@
                 mat4.invert(normalMatrix, modelMatrix);
                 mat4.transpose(normalMatrix, normalMatrix);
                 gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix);
+                gl.uniformMatrix4fv(u_ModalMatrix, false, modelMatrix);
                 gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_BYTE, 0);
             }
         }
