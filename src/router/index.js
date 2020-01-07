@@ -1,14 +1,16 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import arm from '../views/arm/index'
 
 Vue.use(VueRouter);
 
 const routes = [
     {
         path: '/',
-        component: () => import('@/views/arm/index')
+        // component: () => import('@/views/arm/index')
+        component: arm
     },
-    {
+/*    {
         path: '/point',
         component: () => import('@/views/point/index')
     },
@@ -39,7 +41,7 @@ const routes = [
     {
         path: '/arm',
         component: () => import('@/views/arm/index')
-    }
+    }*/
 ];
 
 const router = new VueRouter({

@@ -17,10 +17,11 @@
 
 <script>
     import { initVertexBuffers, compose, waitToLoad } from "@/util/appFunc";
-    import VS from '@/views/arm/shaders/arm.vert'
-    import FS from '@/views/arm/shaders/arm.frag'
+    import VS from '../../views/arm/shaders/arm.vert'
+    import FS from '../../views/arm/shaders/arm.frag'
     import { mat4, vec3 } from 'gl-matrix'
     import MatrixCtx from './MatrixCtx'
+    import canvasWrap from '../../components/canvasWrap'
 
     export default {
         data() {
@@ -68,7 +69,7 @@
             }
         },
         components: {
-            canvasWrap: () => import('@/components/canvasWrap')
+            canvasWrap
         },
         mounted() {
             this.addKeyEvent();
