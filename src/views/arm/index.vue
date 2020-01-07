@@ -161,7 +161,7 @@
                 const u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
                 const u_AmbientLightColor = gl.getUniformLocation(gl.program, 'u_AmbientLightColor');
                 const lightDirection = vec3.normalize(vec3.create(), vec3.set(vec3.create(),0.5, 3.0, 4.0));
-                gl.vertexAttrib3f(a_Color, 1.0, 0.4, 0.0);
+                gl.vertexAttrib3f(a_Color, 1, 0, 0.7);
                 gl.uniform3f(u_AmbientLightColor, 0.2, 0.2, 0.2);
                 // Set the light color (white)
                 gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
@@ -310,17 +310,17 @@
 
                 // finger1
                 const fingerLength = 2;
+                matrixCtx.save(modelMatrix);
                 mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, 0, fingerLength));
                 mat4.rotateX(modelMatrix, modelMatrix, Math.PI/180 * angle.joint3);
-                matrixCtx.save(modelMatrix);
                 mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 1, fingerLength, 1));
                 this.drawBox({ modelMatrix });
                 modelMatrix = matrixCtx.restore();
 
                 // finger2
+                matrixCtx.save(modelMatrix);
                 mat4.translate(modelMatrix, modelMatrix, vec3.set(vec3.create(), 0, 0, -fingerLength));
                 mat4.rotateX(modelMatrix, modelMatrix, -Math.PI/180 * angle.joint3);
-                matrixCtx.save(modelMatrix);
                 mat4.scale(modelMatrix, modelMatrix, vec3.set(vec3.create(), 1, fingerLength, 1));
                 this.drawBox({ modelMatrix });
                 modelMatrix = matrixCtx.restore();
