@@ -102,33 +102,6 @@ export function loadTexture({ gl, uniformLoc, image, count, textUnit, canDraw })
     }
 }
 
-
-export function Vector3 (src) {
-    let v = new Float32Array(3);
-    src.forEach((ele, index) => {
-        v[index] = ele;
-    });
-    this.elements = v;
-}
-
-/**
- * Normalize.
- * @return this
- */
-Vector3.prototype.normalize = function() {
-    let v = this.elements;
-    let len = Math.sqrt(v.reduce((acc, cur) => { return acc += cur ** 2 }, 0));
-    if(len){
-        if(len === 1) return this;
-    } else {
-        v.forEach((ele, index) => v[index] = 0);
-        return this;
-    }
-    len = 1/len;
-    v.forEach((ele, index) => v[index] *= len);
-    return this;
-};
-
 export function waitToLoad(fn) {
     const interVal = 50;
     const maxTime = 3000;
