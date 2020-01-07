@@ -1,3 +1,5 @@
+export const compose = (...fns) => x => fns.reduceRight((y, f) => f(y), x);
+
 export function loadShader({ gl, type, source }) {
     let shader = gl.createShader(gl[type]);
     // Set the shader program
@@ -7,7 +9,7 @@ export function loadShader({ gl, type, source }) {
     return shader;
 }
 
-export function createProgram({ gl, vSource, fSource }) {
+export function initShader({ gl, vSource, fSource }) {
     // Initialize shaders
     let vertexShader = loadShader({ type: 'VERTEX_SHADER', source: vSource, gl });
     let fragmentShader = loadShader({ type: 'FRAGMENT_SHADER', source: fSource, gl });
@@ -16,10 +18,10 @@ export function createProgram({ gl, vSource, fSource }) {
     // Attach the shader objects
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
-
     // Link the program object
     gl.linkProgram(program);
     gl.useProgram(program);
+    gl.program = program;
     return program;
 }
 
@@ -38,19 +40,28 @@ export function windowToCanvas({ x, y, canvas }) {
     }
 }
 
-export function initVertexBuffers({ gl, vertices, program, verticesInfo, indices }) {
-    // Bind the buffer object to target
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    // Write date into the buffer object
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+export function initVertexBuffers({ gl, vertices, program, verticesInfo, indices, isSplitMode = false }) {
+    if (!isSplitMode) {
+        // Bind the buffer object to target
+        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+        // Write date into the buffer object
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+    }
 
     verticesInfo.forEach(info => {
-        let { attrVar, size, stride, offset } = info;
+        let { attrVar, size, stride = 0, offset = 0, vertice } = info;
         let attrLoc = gl.getAttribLocation(program, attrVar);
+        if (isSplitMode) {
+            // Bind the buffer object to target
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+            // Write date into the buffer object
+            gl.bufferData(gl.ARRAY_BUFFER, vertice, gl.STATIC_DRAW);
+        }
         // Assign the buffer object to attrLoc variable
         gl.vertexAttribPointer(attrLoc, size, gl.FLOAT, false, stride, offset);
         // Enable the assignment to attrLoc variable
         gl.enableVertexAttribArray(attrLoc);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
     });
     if (indices) {
         // Write the indices to the buffer object
@@ -78,6 +89,8 @@ export function loadTexture({ gl, uniformLoc, image, count, textUnit, canDraw })
 
     // Set the texture parameters
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    /*    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT );
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT );*/
     // Set the texture image
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
@@ -89,29 +102,22 @@ export function loadTexture({ gl, uniformLoc, image, count, textUnit, canDraw })
     }
 }
 
-
-export function Vector3 (src) {
-    let v = new Float32Array(3);
-    src.forEach((ele, index) => {
-       v[index] = ele;
+export function waitToLoad(fn) {
+    const interVal = 50;
+    const maxTime = 3000;
+    let timer = 0;
+    return new Promise(resolve => {
+        const clockId = setInterval(() => {
+            timer += interVal;
+            const val = fn();
+            if (val) {
+                clearInterval(clockId);
+                resolve(val);
+            } else if (timer >= maxTime) {
+                console.error(`wait to load: ${fn.toString()} 超时!`);
+                clearInterval(clockId);
+                resolve(null);
+            }
+        }, interVal);
     });
-    this.elements = v;
 }
-
-/**
- * Normalize.
- * @return this
- */
-Vector3.prototype.normalize = function() {
-    let v = this.elements;
-    let len = Math.sqrt(v.reduce((acc, cur) => { return acc += cur ** 2 }, 0));
-    if(len){
-        if(len === 1) return this;
-    } else {
-        v.forEach((ele, index) => v[index] = 0);
-        return this;
-    }
-    len = 1/len;
-    v.forEach((ele, index) => v[index] *= len);
-    return this;
-};

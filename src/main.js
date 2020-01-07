@@ -2,8 +2,10 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
-import './assets/scss/style.scss'
+import 'ant-design-vue/dist/antd.css';
+import { Button } from 'ant-design-vue'
 
+Vue.use(Button);
 Vue.config.productionTip = false
 
 new Vue({
