@@ -6,6 +6,12 @@
                      @mousemove="move"
                      :v-source="VS"
                      :f-source="FS"></canvas-wrap>
+        <ul style="list-style: none;text-align: left;">
+            <li>1)⬅➡⬆⬇: 调整角度</li>
+            <li>2)zxcv: 调整手掌、手指角度</li>
+            <li>3)鼠标拖拽旋转</li>
+            <li>4)选中手臂改变颜色</li>
+        </ul>
     </div>
 </template>
 
