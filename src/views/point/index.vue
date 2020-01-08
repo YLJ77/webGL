@@ -20,9 +20,9 @@
         methods: {
             drawThreePoints(gl) {
                 const vertices = new Float32Array([
-                    0.0, 0.5,/*coordinate*/ 1.0, 0.0, 0.0,/*color*/ 10,/*size*/
-                    -0.5, -0.5, 0.0, 1.0, 0.0, 20,
-                    0.5, -0.5, 0.0, 0.0, 1.0, 30
+                    0.0, 0.5,/*coordinate*/ 1.0, 0.0, 0.0,/*color*/ 10.0,/*size*/
+                    -0.5, -0.5, 0.0, 1.0, 0.0, 20.0,
+                    0.5, -0.5, 0.0, 0.0, 1.0, 30.0
                 ]);
                 const FSIZE = vertices.BYTES_PER_ELEMENT;
                 initVertexBuffers({

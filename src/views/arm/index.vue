@@ -77,29 +77,36 @@
             });
         },
         methods: {
-            checkIsPicked({ x, y, rect }) {
-                const x_in_canvas = x - rect.left, y_in_canvas = rect.bottom - y;
-                const { webglInfo: { gl } } = this;
-                const u_Clicked = gl.getUniformLocation(gl.program, 'u_Clicked');
+            getReadPixelCoordinate(e) {
+                const { clientX: x, clientY: y, target } = e;
+                const rect = target.getBoundingClientRect();
+                return {
+                    x: x - rect.left,
+                    y: rect.bottom - y
+                }
+            },
+            checkIsPicked(e) {
+                const { x, y } = this.getReadPixelCoordinate(e);
+                const { webglInfo: { gl, u_Clicked } } = this;
                 let picked = false;
                 gl.uniform1i(u_Clicked, 1);  // Draw the arm with red
                 this.draw();
                 const pixels = new Uint8Array(4);   // Array for storing the pixels
-                gl.readPixels(x_in_canvas, y_in_canvas, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
                 if (pixels[0] === 255) picked = true;
                 gl.uniform1i(u_Clicked, 0);  // Pass false to u_Clicked: redraw arm
                 return picked;
             },
             // Start dragging if a mouse is in canvas
             down(e) {
-                const { webglInfo: { gl } } = this;
-                const { clientX: x, clientY: y, target } = e;
-                const rect = gl.canvas.getBoundingClientRect();
-                const isPicked = this.checkIsPicked({ x, y, rect });
+                const { webglInfo: { gl, a_Color } } = this;
+                const { clientX: x, clientY: y } = e;
+                const isPicked = this.checkIsPicked(e);
                 if (isPicked) {
-                    const a_Color = gl.getAttribLocation(gl.program, 'a_Color');
                     gl.vertexAttrib3f(a_Color, Math.random(), Math.random(), Math.random());
                 }
+                this.draw();
+
                 this.mouse.lastX = x;
                 this.mouse.lastY = y;
                 this.mouse.dragging = true;
@@ -161,6 +168,8 @@
                 });
             },
             main(gl) {
+                // Initialize selected surface
+                const u_Clicked = gl.getUniformLocation(gl.program, 'u_Clicked');
                 const a_Color = gl.getAttribLocation(gl.program, 'a_Color');
                 const u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
                 const u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
@@ -256,7 +265,9 @@
                     viewProjMatrix,
                     u_MvpMatrix,
                     u_NormalMatrix,
-                    u_ModalMatrix
+                    u_ModalMatrix,
+                    u_Clicked,
+                    a_Color
                 };
                 this.draw();
             },

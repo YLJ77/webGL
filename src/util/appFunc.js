@@ -61,7 +61,7 @@ export function initVertexBuffers({ gl, vertices, program, verticesInfo, indices
         gl.vertexAttribPointer(attrLoc, size, gl.FLOAT, false, stride, offset);
         // Enable the assignment to attrLoc variable
         gl.enableVertexAttribArray(attrLoc);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+        // gl.bindBuffer(gl.ARRAY_BUFFER, null);
     });
     if (indices) {
         // Write the indices to the buffer object
@@ -69,6 +69,7 @@ export function initVertexBuffers({ gl, vertices, program, verticesInfo, indices
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
     }
 }
+
 export function initTextures({ gl, program, uniformVar, imgSrc, count, canDraw = true, textUnit = 0 }) {
     // Get the storage location of uniformVar
     let uniformLoc = gl.getUniformLocation(program, uniformVar);
