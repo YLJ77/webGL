@@ -9,6 +9,16 @@ const routes = [
         component: () => import('@/views/arm/index')
     },
     {
+        path: '/three',
+        component: () => import('@/views/threejs/routerView'),
+        children: [
+            {
+                path: 'first3d',
+                component: () => import('@/views/threejs/first3d'),
+            }
+        ]
+    },
+    {
         path: '/point',
         component: () => import('@/views/point/index')
     },
